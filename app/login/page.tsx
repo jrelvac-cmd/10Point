@@ -18,6 +18,7 @@ export default function LoginPage() {
   const [username, setUsername] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [checkEmail, setCheckEmail] = useState(false);
 
   async function handleGoogle() {
     setError(null);
@@ -34,15 +35,21 @@ export default function LoginPage() {
     setLoading(true);
 
     if (mode === "signup") {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: { data: { username } },
       });
       setLoading(false);
       if (error) return setError(error.message);
-      router.push("/home");
-      router.refresh();
+
+      if (data.session) {
+        router.push("/home");
+        router.refresh();
+        return;
+      }
+
+      setCheckEmail(true);
       return;
     }
 
@@ -51,6 +58,29 @@ export default function LoginPage() {
     if (error) return setError(error.message);
     router.push("/home");
     router.refresh();
+  }
+
+  if (checkEmail) {
+    return (
+      <main className="flex-1 flex flex-col items-center justify-center px-6 py-12">
+        <div className="glass-card-strong flex w-full max-w-sm flex-col gap-3 px-6 py-8 text-center">
+          <h1 className="text-xl font-semibold text-text-primary">Vérifie ta boîte mail</h1>
+          <p className="text-sm text-text-secondary">
+            Un lien de confirmation a été envoyé à <span className="text-text-primary">{email}</span>.
+            Clique dessus pour activer ton compte, puis reviens te connecter ici.
+          </p>
+          <button
+            onClick={() => {
+              setCheckEmail(false);
+              setMode("signin");
+            }}
+            className="mt-2 text-center text-xs text-text-secondary hover:text-text-primary"
+          >
+            Retour à la connexion
+          </button>
+        </div>
+      </main>
+    );
   }
 
   return (
