@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { APP_NAME, APP_URL } from "@/lib/constants";
+import { translateAuthError, type AuthErrorKind } from "@/lib/auth-errors";
 
 export const dynamic = "force-dynamic";
 
@@ -17,8 +18,16 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [errorKind, setErrorKind] = useState<AuthErrorKind>("generic");
+  const [notice, setNotice] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [checkEmail, setCheckEmail] = useState(false);
+
+  function switchMode(next: Mode) {
+    setMode(next);
+    setError(null);
+    setNotice(null);
+  }
 
   async function handleGoogle() {
     setError(null);
@@ -26,22 +35,58 @@ export default function LoginPage() {
       provider: "google",
       options: { redirectTo: `${APP_URL}/auth/callback` },
     });
-    if (error) setError(error.message);
+    if (error) {
+      setError(error.message);
+      setErrorKind("generic");
+    }
+  }
+
+  /** Renvoie le lien de confirmation quand le premier mail n'est pas arrivé. */
+  async function resendConfirmation() {
+    if (!email) return;
+    setLoading(true);
+    setError(null);
+    setNotice(null);
+
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email,
+      options: { emailRedirectTo: `${APP_URL}/auth/callback` },
+    });
+    setLoading(false);
+
+    if (error) {
+      const friendly = translateAuthError(error.code, error.message);
+      setError(friendly.message);
+      setErrorKind(friendly.kind);
+      return;
+    }
+    setNotice(`Nouveau lien envoyé à ${email}. Pense à regarder dans les spams.`);
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setNotice(null);
     setLoading(true);
 
     if (mode === "signup") {
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
-        options: { data: { username } },
+        options: {
+          data: { username },
+          emailRedirectTo: `${APP_URL}/auth/callback`,
+        },
       });
       setLoading(false);
-      if (error) return setError(error.message);
+
+      if (error) {
+        const friendly = translateAuthError(error.code, error.message);
+        setError(friendly.message);
+        setErrorKind(friendly.kind);
+        return;
+      }
 
       if (data.session) {
         router.push("/home");
@@ -55,7 +100,14 @@ export default function LoginPage() {
 
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
-    if (error) return setError(error.message);
+
+    if (error) {
+      const friendly = translateAuthError(error.code, error.message);
+      setError(friendly.message);
+      setErrorKind(friendly.kind);
+      return;
+    }
+
     router.push("/home");
     router.refresh();
   }
@@ -66,15 +118,30 @@ export default function LoginPage() {
         <div className="glass-card-strong flex w-full max-w-sm flex-col gap-3 px-6 py-8 text-center">
           <h1 className="text-xl font-semibold text-text-primary">Vérifie ta boîte mail</h1>
           <p className="text-sm text-text-secondary">
-            Un lien de confirmation a été envoyé à <span className="text-text-primary">{email}</span>.
-            Clique dessus pour activer ton compte, puis reviens te connecter ici.
+            Un lien de confirmation a été envoyé à{" "}
+            <span className="text-text-primary">{email}</span>. Clique dessus pour activer
+            ton compte, puis reviens te connecter ici.
           </p>
+          <p className="text-xs text-text-muted">
+            Rien reçu au bout de deux minutes ? Regarde dans les spams, puis renvoie le lien.
+          </p>
+
+          {notice && <p className="text-sm text-up">{notice}</p>}
+          {error && <p className="text-sm text-down">{error}</p>}
+
+          <button
+            onClick={resendConfirmation}
+            disabled={loading}
+            className="glass-card px-4 py-3 text-sm text-text-primary hover:bg-white/15 disabled:opacity-50"
+          >
+            Renvoyer le lien
+          </button>
           <button
             onClick={() => {
               setCheckEmail(false);
-              setMode("signin");
+              switchMode("signin");
             }}
-            className="mt-2 text-center text-xs text-text-secondary hover:text-text-primary"
+            className="text-xs text-text-secondary hover:text-text-primary"
           >
             Retour à la connexion
           </button>
@@ -107,11 +174,12 @@ export default function LoginPage() {
               type="text"
               placeholder="Nom d'utilisateur"
               value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              onChange={(e) => setUsername(e.target.value.toLowerCase())}
               required
               minLength={3}
               maxLength={24}
               pattern="[a-z0-9_]+"
+              title="3 à 24 caractères : minuscules, chiffres et underscore"
               className="glass-card bg-transparent px-4 py-3 text-sm text-text-primary placeholder:text-text-muted outline-none"
             />
           )}
@@ -133,22 +201,65 @@ export default function LoginPage() {
             className="glass-card bg-transparent px-4 py-3 text-sm text-text-primary placeholder:text-text-muted outline-none"
           />
 
-          {error && <p className="text-sm text-down">{error}</p>}
+          {notice && <p className="text-sm text-up">{notice}</p>}
+
+          {error && (
+            <div className="flex flex-col gap-2 rounded-xl border-l-2 border-l-down bg-white/5 px-3 py-2">
+              <p className="text-sm text-text-primary">{error}</p>
+
+              {errorKind === "not_confirmed" && (
+                <button
+                  type="button"
+                  onClick={resendConfirmation}
+                  disabled={loading}
+                  className="self-start text-xs text-accent-light hover:underline disabled:opacity-50"
+                >
+                  Renvoyer le lien de confirmation
+                </button>
+              )}
+
+              {errorKind === "generic" && mode === "signin" && (
+                <button
+                  type="button"
+                  onClick={() => switchMode("signup")}
+                  className="self-start text-xs text-accent-light hover:underline"
+                >
+                  Créer un compte avec cet email
+                </button>
+              )}
+
+              {errorKind === "already_exists" && (
+                <button
+                  type="button"
+                  onClick={() => switchMode("signin")}
+                  className="self-start text-xs text-accent-light hover:underline"
+                >
+                  Aller à la connexion
+                </button>
+              )}
+            </div>
+          )}
 
           <button
             type="submit"
             disabled={loading}
             className="rounded-2xl bg-accent px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-accent-dark disabled:opacity-50"
           >
-            {mode === "signin" ? "Se connecter" : "Créer mon compte"}
+            {loading
+              ? "Un instant…"
+              : mode === "signin"
+                ? "Se connecter"
+                : "Créer mon compte"}
           </button>
         </form>
 
         <button
-          onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
+          onClick={() => switchMode(mode === "signin" ? "signup" : "signin")}
           className="text-center text-xs text-text-secondary hover:text-text-primary"
         >
-          {mode === "signin" ? "Pas encore de compte ? Inscris-toi" : "Déjà un compte ? Connecte-toi"}
+          {mode === "signin"
+            ? "Pas encore de compte ? Inscris-toi"
+            : "Déjà un compte ? Connecte-toi"}
         </button>
       </div>
     </main>
