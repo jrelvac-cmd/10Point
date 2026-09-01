@@ -1,3 +1,4 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "./supabase/server";
 import { resolvePrice, variation30d, type CardPriceRow } from "./pricing";
 
@@ -49,7 +50,26 @@ type Row = {
  */
 export async function getCollection(userId: string): Promise<CollectionEntry[]> {
   const supabase = await createClient();
+  return loadCollection(supabase, userId);
+}
 
+/**
+ * Variante pour la page publique. Elle passe par un client service-role car un
+ * visiteur anonyme ne peut, par conception, lire ni la table profiles ni les
+ * collections d'autrui. La sélection reste volontairement étroite et le code
+ * ne s'exécute que côté serveur : la clé n'atteint jamais le navigateur.
+ */
+export async function getPublicCollection(
+  admin: SupabaseClient,
+  userId: string,
+): Promise<CollectionEntry[]> {
+  return loadCollection(admin, userId);
+}
+
+async function loadCollection(
+  supabase: SupabaseClient,
+  userId: string,
+): Promise<CollectionEntry[]> {
   const { data } = await supabase
     .from("collection_items")
     .select(
