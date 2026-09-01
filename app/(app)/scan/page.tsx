@@ -1,12 +1,27 @@
+import { createClient } from "@/lib/supabase/server";
+import { ScanClient } from "@/components/scan/ScanClient";
+import { isPro, remainingScans, type Plan } from "@/lib/plans";
+
 export const dynamic = "force-dynamic";
 
-export default function ScanPage() {
+export default async function ScanPage() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("plan, scans_this_month")
+    .eq("id", user!.id)
+    .maybeSingle();
+
+  const plan = (profile?.plan ?? "free") as Plan;
+
   return (
-    <div className="flex flex-col gap-4 py-4">
-      <h1 className="text-xl font-semibold text-text-primary">Scanner une carte</h1>
-      <div className="glass-card flex flex-col items-center gap-2 px-6 py-12 text-center">
-        <p className="text-text-secondary">Le scan arrive bientôt.</p>
-      </div>
-    </div>
+    <ScanClient
+      isPro={isPro(plan)}
+      remainingScans={remainingScans(plan, profile?.scans_this_month ?? 0)}
+    />
   );
 }

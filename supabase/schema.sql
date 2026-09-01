@@ -28,10 +28,12 @@ create unique index profiles_whop_membership_id_idx on profiles (whop_membership
 -- ============================================================
 create table pokemon_cards (
   id text primary key,
-  name text not null,
+  name text not null,              -- nom anglais (référentiel PokéTCG)
+  name_fr text,                    -- nom lu sur la carte française, pour l'affichage
   set_name text,
   set_id text,
   number text,
+  set_printed_total integer,
   rarity text,
   image_small text,
   image_large text,

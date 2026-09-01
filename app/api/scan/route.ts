@@ -1,0 +1,142 @@
+import { NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { extractCardFromImage } from "@/lib/anthropic";
+import { findCandidates } from "@/lib/poketcg";
+import { cacheCardAndPrices } from "@/lib/cards";
+import { canScan, remainingScans, type Plan } from "@/lib/plans";
+import { resolvePrice, variation30d, ebaySearchUrl } from "@/lib/pricing";
+
+export const maxDuration = 60;
+
+const MAX_BYTES = 10 * 1024 * 1024;
+const ALLOWED = ["image/jpeg", "image/png", "image/webp"] as const;
+type AllowedType = (typeof ALLOWED)[number];
+
+function fail(code: string, message: string, status = 400) {
+  return NextResponse.json({ error: code, message }, { status });
+}
+
+export async function POST(request: Request) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return fail("UNAUTHENTICATED", "Connecte-toi pour scanner.", 401);
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("plan, scans_this_month, scans_reset_at")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (!profile) return fail("NO_PROFILE", "Profil introuvable.", 404);
+
+  const admin = createAdminClient();
+
+  // Remise à zéro du compteur mensuel si la période est passée.
+  let scansThisMonth = profile.scans_this_month as number;
+  if (new Date(profile.scans_reset_at) <= new Date()) {
+    const nextReset = new Date();
+    nextReset.setUTCMonth(nextReset.getUTCMonth() + 1, 1);
+    nextReset.setUTCHours(0, 0, 0, 0);
+    scansThisMonth = 0;
+    await admin
+      .from("profiles")
+      .update({ scans_this_month: 0, scans_reset_at: nextReset.toISOString() })
+      .eq("id", user.id);
+  }
+
+  const plan = profile.plan as Plan;
+  if (!canScan(plan, scansThisMonth)) {
+    return fail(
+      "QUOTA_EXCEEDED",
+      "Tu as utilisé tes 20 scans du mois. Passe Pro pour continuer.",
+      402,
+    );
+  }
+
+  const formData = await request.formData();
+  const file = formData.get("image");
+  if (!(file instanceof File)) return fail("NO_IMAGE", "Aucune image reçue.");
+  if (file.size > MAX_BYTES) return fail("TOO_LARGE", "Image trop lourde (max 10 Mo).");
+  if (!ALLOWED.includes(file.type as AllowedType)) {
+    return fail("BAD_FORMAT", "Formats acceptés : JPG, PNG, WEBP.");
+  }
+
+  // L'image n'est jamais stockée : elle vit uniquement le temps de la requête.
+  const base64 = Buffer.from(await file.arrayBuffer()).toString("base64");
+
+  let extraction;
+  try {
+    extraction = await extractCardFromImage(base64, file.type as AllowedType);
+  } catch {
+    return fail("VISION_FAILED", "Lecture de la carte impossible. Réessaie avec une photo plus nette.", 502);
+  }
+
+  if (!extraction.is_pokemon_card) {
+    return fail("NOT_A_CARD", "Cette image ne semble pas être une carte Pokémon.");
+  }
+
+  let candidates;
+  try {
+    candidates = await findCandidates(extraction);
+  } catch {
+    return fail("POKETCG_FAILED", "Service d'identification indisponible. Réessaie dans un instant.", 502);
+  }
+
+  if (!candidates.length) {
+    // Scan non abouti : il ne consomme pas de quota.
+    return NextResponse.json(
+      {
+        error: "NO_MATCH",
+        message: "Carte non reconnue. Cherche-la par son nom.",
+        extraction,
+      },
+      { status: 404 },
+    );
+  }
+
+  const shortlist = candidates.slice(0, 5);
+  const cards = await Promise.all(
+    shortlist.map(async (card) => {
+      const prices = await cacheCardAndPrices(card, extraction.name_fr);
+      const normal = resolvePrice(prices, false);
+      const reverse = resolvePrice(prices, true);
+      return {
+        id: card.id,
+        name: extraction.name_fr ?? card.name,
+        name_en: card.name,
+        set_name: card.set.name,
+        number: card.number,
+        set_printed_total: card.set.printedTotal ?? card.set.total,
+        rarity: card.rarity ?? null,
+        image_small: card.images.small,
+        image_large: card.images.large,
+        ebay_url: ebaySearchUrl(card.name, card.number, card.set.printedTotal ?? card.set.total),
+        prices: {
+          normal: { ...normal, variation_30d: variation30d(normal.trend, normal.avg30) },
+          reverse: { ...reverse, variation_30d: variation30d(reverse.trend, reverse.avg30) },
+        },
+      };
+    }),
+  );
+
+  // Scan abouti : on décompte le quota et on journalise.
+  await admin
+    .from("profiles")
+    .update({ scans_this_month: scansThisMonth + 1 })
+    .eq("id", user.id);
+
+  await admin.from("scan_logs").insert({
+    user_id: user.id,
+    card_id: cards.length === 1 ? cards[0].id : null,
+  });
+
+  return NextResponse.json({
+    confirmed: cards.length === 1,
+    cards,
+    extraction,
+    remaining_scans: remainingScans(plan, scansThisMonth + 1),
+  });
+}
