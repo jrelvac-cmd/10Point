@@ -1,7 +1,15 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PUBLIC_PREFIXES = ["/login", "/u/", "/legal", "/api/webhooks", "/_next", "/favicon"];
+const PUBLIC_PREFIXES = [
+  "/login",
+  "/u/",
+  "/legal",
+  "/api/webhooks",
+  "/api/demo-login",
+  "/_next",
+  "/favicon",
+];
 const ONBOARDING_PATH = "/choisir-pseudo";
 const ONBOARDING_EXEMPT = [ONBOARDING_PATH, "/auth/callback", "/api/"];
 

@@ -29,6 +29,35 @@ export default function LoginPage() {
     setNotice(null);
   }
 
+  /** Bypass de dev : entre dans l'app avec un compte de démonstration. */
+  async function handleDemo() {
+    setLoading(true);
+    setError(null);
+
+    const res = await fetch("/api/demo-login", { method: "POST" });
+    if (!res.ok) {
+      setLoading(false);
+      setError("Le mode démo n'est pas activé sur cet environnement.");
+      setErrorKind("generic");
+      return;
+    }
+
+    const { email: demoEmail, password: demoPassword } = await res.json();
+    const { error } = await supabase.auth.signInWithPassword({
+      email: demoEmail,
+      password: demoPassword,
+    });
+    setLoading(false);
+
+    if (error) {
+      setError(error.message);
+      setErrorKind("generic");
+      return;
+    }
+    router.push("/home");
+    router.refresh();
+  }
+
   async function handleGoogle() {
     setError(null);
     const { error } = await supabase.auth.signInWithOAuth({
@@ -252,6 +281,16 @@ export default function LoginPage() {
                 : "Créer mon compte"}
           </button>
         </form>
+
+        {process.env.NEXT_PUBLIC_ENABLE_DEMO_LOGIN === "true" && (
+          <button
+            onClick={handleDemo}
+            disabled={loading}
+            className="rounded-2xl border border-dashed border-warn/50 px-4 py-3 text-sm text-warn transition-colors hover:bg-warn/10 disabled:opacity-50"
+          >
+            Entrer en mode démo (sans compte)
+          </button>
+        )}
 
         <button
           onClick={() => switchMode(mode === "signin" ? "signup" : "signin")}
