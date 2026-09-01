@@ -51,11 +51,25 @@ RÈGLES ABSOLUES :
 
 Tu ne donnes jamais de prix ni d'estimation de valeur.`;
 
+/**
+ * Les cles « identity-linked » exigent un en-tete anthropic-workspace-id, que
+ * les cles de workspace classiques ne demandent pas. On ne l envoie que s il
+ * est renseigne : le code fonctionne ainsi avec les deux types de cle.
+ */
+function anthropicClient() {
+  const workspaceId = process.env.ANTHROPIC_WORKSPACE_ID;
+  return new Anthropic(
+    workspaceId
+      ? { defaultHeaders: { "anthropic-workspace-id": workspaceId } }
+      : {},
+  );
+}
+
 export async function extractCardFromImage(
   imageBase64: string,
   mediaType: "image/jpeg" | "image/png" | "image/webp",
 ): Promise<CardExtraction> {
-  const client = new Anthropic();
+  const client = anthropicClient();
 
   const response = await client.messages.parse({
     model: VISION_MODEL,

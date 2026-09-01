@@ -13,7 +13,7 @@ export async function cacheCardAndPrices(card: PokeTcgCard, nameFr?: string | nu
   const admin = createAdminClient();
   const prices = extractPrices(card);
 
-  await admin.from("pokemon_cards").upsert(
+  const { error: cardError } = await admin.from("pokemon_cards").upsert(
     {
       id: card.id,
       name: card.name,
@@ -28,6 +28,12 @@ export async function cacheCardAndPrices(card: PokeTcgCard, nameFr?: string | nu
     },
     { onConflict: "id", ignoreDuplicates: false },
   );
+
+  // Sans cette remontée, une colonne manquante ferait échouer le scan plus loin
+  // avec une erreur incompréhensible (violation de clé étrangère).
+  if (cardError) {
+    throw new Error(`CARD_CACHE_FAILED: ${cardError.message}`);
+  }
 
   const expiresAt = new Date(Date.now() + PRICE_TTL_HOURS * 3600_000).toISOString();
 

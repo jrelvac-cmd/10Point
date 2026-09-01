@@ -1,13 +1,39 @@
 export const dynamic = "force-dynamic";
 
-export default function CollectionPage() {
+import { createClient } from "@/lib/supabase/server";
+import { getCollection } from "@/lib/collection";
+import { CollectionClient } from "@/components/collection/CollectionClient";
+import { collectionLimitFor, type Plan } from "@/lib/plans";
+
+export default async function CollectionPage() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("plan")
+    .eq("id", user!.id)
+    .maybeSingle();
+
+  const plan = (profile?.plan ?? "free") as Plan;
+  const all = await getCollection(user!.id);
+
+  // Un Pro repassé en Free garde ses cartes en base : on n'en affiche que les
+  // 100 premières et on l'invite à faire le tri plutôt que de supprimer pour lui.
+  const limit = collectionLimitFor(plan);
+  const entries = limit === null ? all : all.slice(0, limit);
+  const hiddenCount = all.length - entries.length;
+
+  const totalValue = entries.reduce((sum, e) => sum + (e.lineValue ?? 0), 0);
+
   return (
-    <div className="flex flex-col gap-4 py-4">
-      <h1 className="text-xl font-semibold text-text-primary">Ma collection</h1>
-      <div className="glass-card flex flex-col items-center gap-2 px-6 py-12 text-center">
-        <p className="text-text-secondary">Aucune carte pour le moment.</p>
-        <p className="text-sm text-text-muted">Utilise le bouton scan pour ajouter tes premières cartes.</p>
-      </div>
-    </div>
+    <CollectionClient
+      entries={entries}
+      totalValue={totalValue}
+      limitReached={hiddenCount > 0}
+      hiddenCount={hiddenCount}
+    />
   );
 }
