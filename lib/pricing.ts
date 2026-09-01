@@ -14,8 +14,16 @@ export type CardPriceRow = {
   reverse_avg30: number | null;
 };
 
+/**
+ * Cardmarket renvoie 0 pour une variante qu'il ne cote pas (le Set de Base n'a
+ * pas de reverse, par exemple). Une carte ne valant jamais exactement 0 €, on
+ * traite cette valeur comme une absence de donnée : « — » plutôt que « 0,00 € »,
+ * qui laisserait croire que la carte est sans valeur.
+ */
 const round2 = (v: number | undefined) =>
-  typeof v === "number" && Number.isFinite(v) ? Math.round(v * 100) / 100 : null;
+  typeof v === "number" && Number.isFinite(v) && v > 0
+    ? Math.round(v * 100) / 100
+    : null;
 
 export function extractPrices(card: PokeTcgCard): CardPriceRow {
   const p = card.cardmarket?.prices ?? {};

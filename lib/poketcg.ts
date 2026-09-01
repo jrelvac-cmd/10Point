@@ -117,6 +117,22 @@ export async function findCandidates(extraction: {
  * imprimé colle exactement (set.total inclut les cartes secrètes, donc un set
  * imprimé en /101 peut matcher une recherche en /102 — d'où ce départage).
  */
+const EXACT_NAME = 100;
+const LOOSE_NAME = 60;
+const EXACT_TOTAL = 20;
+const CERTAIN_SCORE = EXACT_NAME + EXACT_TOTAL;
+
+function scoreCard(card: PokeTcgCard, wanted: string | null, total: number | null) {
+  let s = 0;
+  if (wanted) {
+    const name = card.name.toLowerCase();
+    if (name === wanted) s += EXACT_NAME;
+    else if (name.includes(wanted) || wanted.includes(name)) s += LOOSE_NAME;
+  }
+  if (total !== null && card.set.printedTotal === total) s += EXACT_TOTAL;
+  return s;
+}
+
 function rank(
   cards: PokeTcgCard[],
   nameEn: string | null,
@@ -127,18 +143,34 @@ function rank(
   const wanted = nameEn?.toLowerCase().trim() ?? null;
   const total = setTotal ? Number(setTotal) : null;
 
-  const score = (card: PokeTcgCard) => {
-    let s = 0;
-    if (wanted) {
-      const name = card.name.toLowerCase();
-      if (name === wanted) s += 100;
-      else if (name.includes(wanted) || wanted.includes(name)) s += 60;
-    }
-    if (total !== null && card.set.printedTotal === total) s += 20;
-    return s;
-  };
+  return [...cards].sort(
+    (a, b) => scoreCard(b, wanted, total) - scoreCard(a, wanted, total),
+  );
+}
 
-  return [...cards].sort((a, b) => score(b) - score(a));
+/**
+ * Vrai quand le premier candidat est le seul à cumuler nom anglais exact ET
+ * total du set exact : deux signaux indépendants concordants suffisent pour
+ * confirmer sans déranger l'utilisateur. Dès qu'un autre candidat atteint le
+ * même score, on préfère laisser choisir plutôt que risquer un mauvais prix.
+ */
+export function isUnambiguous(
+  ranked: PokeTcgCard[],
+  nameEn: string | null,
+  setTotal: string | null,
+): boolean {
+  if (ranked.length === 0) return false;
+  if (ranked.length === 1) return true;
+  if (!nameEn || !setTotal) return false;
+
+  const wanted = nameEn.toLowerCase().trim();
+  const total = Number(setTotal);
+  if (!Number.isFinite(total)) return false;
+
+  const best = scoreCard(ranked[0], wanted, total);
+  if (best < CERTAIN_SCORE) return false;
+
+  return scoreCard(ranked[1], wanted, total) < best;
 }
 
 export async function getCardById(id: string): Promise<PokeTcgCard | null> {

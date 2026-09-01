@@ -2,10 +2,10 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { extractCardFromImage } from "@/lib/anthropic";
-import { findCandidates } from "@/lib/poketcg";
+import { findCandidates, isUnambiguous } from "@/lib/poketcg";
 import { cacheCardAndPrices } from "@/lib/cards";
 import { canScan, remainingScans, type Plan } from "@/lib/plans";
-import { resolvePrice, variation30d, ebaySearchUrl } from "@/lib/pricing";
+import { resolvePrice, variation30d, ebaySearchUrl, extractPrices } from "@/lib/pricing";
 
 export const maxDuration = 60;
 
@@ -97,30 +97,37 @@ export async function POST(request: Request) {
     );
   }
 
-  const shortlist = candidates.slice(0, 5);
-  const cards = await Promise.all(
-    shortlist.map(async (card) => {
-      const prices = await cacheCardAndPrices(card, extraction.name_fr);
-      const normal = resolvePrice(prices, false);
-      const reverse = resolvePrice(prices, true);
-      return {
-        id: card.id,
-        name: extraction.name_fr ?? card.name,
-        name_en: card.name,
-        set_name: card.set.name,
-        number: card.number,
-        set_printed_total: card.set.printedTotal ?? card.set.total,
-        rarity: card.rarity ?? null,
-        image_small: card.images.small,
-        image_large: card.images.large,
-        ebay_url: ebaySearchUrl(card.name, card.number, card.set.printedTotal ?? card.set.total),
-        prices: {
-          normal: { ...normal, variation_30d: variation30d(normal.trend, normal.avg30) },
-          reverse: { ...reverse, variation_30d: variation30d(reverse.trend, reverse.avg30) },
-        },
-      };
-    }),
-  );
+  // Nom anglais et total du set concordent sur un seul candidat : inutile de
+  // faire choisir l'utilisateur.
+  const certain = isUnambiguous(candidates, extraction.name_en, extraction.set_total);
+  const shortlist = certain ? candidates.slice(0, 1) : candidates.slice(0, 5);
+
+  // Seul le premier candidat est écrit en base : c'est celui qu'on affiche, et
+  // persister les quatre autres allongeait le scan pour rien. Les candidats non
+  // retenus sont mis en cache à l'ajout, si l'utilisateur en choisit un.
+  const topPrices = await cacheCardAndPrices(shortlist[0], extraction.name_fr);
+
+  const cards = shortlist.map((card, index) => {
+    const prices = index === 0 ? topPrices : extractPrices(card);
+    const normal = resolvePrice(prices, false);
+    const reverse = resolvePrice(prices, true);
+    return {
+      id: card.id,
+      name: extraction.name_fr ?? card.name,
+      name_en: card.name,
+      set_name: card.set.name,
+      number: card.number,
+      set_printed_total: card.set.printedTotal ?? card.set.total,
+      rarity: card.rarity ?? null,
+      image_small: card.images.small,
+      image_large: card.images.large,
+      ebay_url: ebaySearchUrl(card.name, card.number, card.set.printedTotal ?? card.set.total),
+      prices: {
+        normal: { ...normal, variation_30d: variation30d(normal.trend, normal.avg30) },
+        reverse: { ...reverse, variation_30d: variation30d(reverse.trend, reverse.avg30) },
+      },
+    };
+  });
 
   // Scan abouti : on décompte le quota et on journalise.
   await admin
