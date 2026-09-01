@@ -18,13 +18,13 @@ type PriceSet = {
 type ScannedCard = {
   id: string;
   name: string;
-  name_en: string;
-  set_name: string;
+  set_name: string | null;
   number: string;
-  set_printed_total: number;
+  set_printed_total: number | null;
   rarity: string | null;
-  image_large: string;
+  image_large: string | null;
   ebay_url: string;
+  variants: { normal: boolean; holo: boolean; reverse: boolean; firstEdition: boolean };
   prices: { normal: PriceSet; reverse: PriceSet };
 };
 
@@ -229,7 +229,7 @@ export function ScanClient({ isPro, remainingScans }: Props) {
                 className="glass-card flex flex-col gap-2 p-2 text-left transition-colors hover:bg-white/15"
               >
                 <Image
-                  src={card.image_large}
+                  src={card.image_large ?? ""}
                   alt={card.name}
                   width={245}
                   height={342}
@@ -250,7 +250,7 @@ export function ScanClient({ isPro, remainingScans }: Props) {
         <div className="glass-card-strong flex flex-col gap-4 p-4">
           <div className="flex gap-4">
             <Image
-              src={selected.image_large}
+              src={selected.image_large ?? ""}
               alt={selected.name}
               width={245}
               height={342}
@@ -291,14 +291,20 @@ export function ScanClient({ isPro, remainingScans }: Props) {
             coche ci-dessous ce que tu possèdes.
           </p>
 
-          <div className="flex flex-wrap gap-2">
-            <Toggle label="Holo" active={isHolo} onClick={() => setIsHolo(!isHolo)} />
-            <Toggle
-              label="Reverse"
-              active={isReverse}
-              onClick={() => setIsReverse(!isReverse)}
-            />
-          </div>
+          {(selected.variants?.holo || selected.variants?.reverse) && (
+            <div className="flex flex-wrap gap-2">
+              {selected.variants?.holo && (
+                <Toggle label="Holo" active={isHolo} onClick={() => setIsHolo(!isHolo)} />
+              )}
+              {selected.variants?.reverse && (
+                <Toggle
+                  label="Reverse"
+                  active={isReverse}
+                  onClick={() => setIsReverse(!isReverse)}
+                />
+              )}
+            </div>
+          )}
 
           <div className="flex items-center gap-3">
             <label className="text-sm text-text-secondary">Quantité</label>

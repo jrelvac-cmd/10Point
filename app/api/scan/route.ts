@@ -2,10 +2,10 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { extractCardFromImage } from "@/lib/anthropic";
-import { findCandidates, isUnambiguous } from "@/lib/poketcg";
+import { findCandidates, isUnambiguous, ebaySearchUrl } from "@/lib/tcgdex";
 import { cacheCardAndPrices } from "@/lib/cards";
 import { canScan, remainingScans, type Plan } from "@/lib/plans";
-import { resolvePrice, variation30d, ebaySearchUrl, extractPrices } from "@/lib/pricing";
+import { resolvePrice, variation30d, extractPrices } from "@/lib/pricing";
 
 export const maxDuration = 60;
 
@@ -71,7 +71,11 @@ export async function POST(request: Request) {
   try {
     extraction = await extractCardFromImage(base64, file.type as AllowedType);
   } catch {
-    return fail("VISION_FAILED", "Lecture de la carte impossible. Réessaie avec une photo plus nette.", 502);
+    return fail(
+      "VISION_FAILED",
+      "Lecture de la carte impossible. Réessaie avec une photo plus nette.",
+      502,
+    );
   }
 
   if (!extraction.is_pokemon_card) {
@@ -82,7 +86,11 @@ export async function POST(request: Request) {
   try {
     candidates = await findCandidates(extraction);
   } catch {
-    return fail("POKETCG_FAILED", "Service d'identification indisponible. Réessaie dans un instant.", 502);
+    return fail(
+      "TCGDEX_FAILED",
+      "Service d'identification indisponible. Réessaie dans un instant.",
+      502,
+    );
   }
 
   if (!candidates.length) {
@@ -97,15 +105,15 @@ export async function POST(request: Request) {
     );
   }
 
-  // Nom anglais et total du set concordent sur un seul candidat : inutile de
+  // Nom, numéro et total du set concordent sur un seul candidat : inutile de
   // faire choisir l'utilisateur.
-  const certain = isUnambiguous(candidates, extraction.name_en, extraction.set_total);
+  const certain = isUnambiguous(candidates, extraction);
   const shortlist = certain ? candidates.slice(0, 1) : candidates.slice(0, 5);
 
-  // Seul le premier candidat est écrit en base : c'est celui qu'on affiche, et
-  // persister les quatre autres allongeait le scan pour rien. Les candidats non
-  // retenus sont mis en cache à l'ajout, si l'utilisateur en choisit un.
-  const topPrices = await cacheCardAndPrices(shortlist[0], extraction.name_fr);
+  // Seul le candidat affiché est écrit en base ; persister les autres
+  // allongerait le scan pour rien. Ils sont mis en cache à l'ajout, si
+  // l'utilisateur en choisit un.
+  const topPrices = await cacheCardAndPrices(shortlist[0]);
 
   const cards = shortlist.map((card, index) => {
     const prices = index === 0 ? topPrices : extractPrices(card);
@@ -113,15 +121,16 @@ export async function POST(request: Request) {
     const reverse = resolvePrice(prices, true);
     return {
       id: card.id,
-      name: extraction.name_fr ?? card.name,
-      name_en: card.name,
-      set_name: card.set.name,
-      number: card.number,
-      set_printed_total: card.set.printedTotal ?? card.set.total,
-      rarity: card.rarity ?? null,
-      image_small: card.images.small,
-      image_large: card.images.large,
-      ebay_url: ebaySearchUrl(card.name, card.number, card.set.printedTotal ?? card.set.total),
+      name: card.name,
+      set_name: card.setName,
+      number: card.localId,
+      set_printed_total: card.setPrintedTotal,
+      rarity: card.rarity,
+      image_small: card.imageSmall,
+      image_large: card.imageLarge,
+      // Permet de n'afficher que les cases des variantes qui existent vraiment.
+      variants: card.variants,
+      ebay_url: ebaySearchUrl(card),
       prices: {
         normal: { ...normal, variation_30d: variation30d(normal.trend, normal.avg30) },
         reverse: { ...reverse, variation_30d: variation30d(reverse.trend, reverse.avg30) },

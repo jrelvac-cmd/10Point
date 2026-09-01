@@ -1,4 +1,4 @@
-import type { PokeTcgCard } from "./poketcg";
+import type { TcgdexCard } from "./tcgdex";
 
 export type CardPriceRow = {
   card_id: string;
@@ -14,53 +14,58 @@ export type CardPriceRow = {
   reverse_avg30: number | null;
 };
 
-/**
- * Cardmarket renvoie 0 pour une variante qu'il ne cote pas (le Set de Base n'a
- * pas de reverse, par exemple). Une carte ne valant jamais exactement 0 €, on
- * traite cette valeur comme une absence de donnée : « — » plutôt que « 0,00 € »,
- * qui laisserait croire que la carte est sans valeur.
- */
-const round2 = (v: number | undefined) =>
+const round2 = (v: number | null | undefined) =>
   typeof v === "number" && Number.isFinite(v) && v > 0
     ? Math.round(v * 100) / 100
     : null;
 
-export function extractPrices(card: PokeTcgCard): CardPriceRow {
-  const p = card.cardmarket?.prices ?? {};
+/**
+ * Les prix viennent de Cardmarket en euros. Une valeur nulle ou absente
+ * signifie « pas de cote », jamais « ne vaut rien » : on la garde à null pour
+ * afficher « — » plutôt qu'un trompeur 0,00 €.
+ */
+export function extractPrices(card: TcgdexCard): CardPriceRow {
+  const cm = card.cardmarket;
   return {
     card_id: card.id,
-    trend: round2(p.trendPrice),
-    low: round2(p.lowPrice),
-    avg1: round2(p.avg1),
-    avg7: round2(p.avg7),
-    avg30: round2(p.avg30),
-    reverse_trend: round2(p.reverseHoloTrend),
-    reverse_low: round2(p.reverseHoloLow),
-    reverse_avg1: round2(p.reverseHoloAvg1),
-    reverse_avg7: round2(p.reverseHoloAvg7),
-    reverse_avg30: round2(p.reverseHoloAvg30),
+    trend: round2(cm.trend),
+    low: round2(cm.low),
+    avg1: round2(cm.avg1),
+    avg7: round2(cm.avg7),
+    avg30: round2(cm.avg30),
+    reverse_trend: round2(cm.reverse_trend),
+    reverse_low: round2(cm.reverse_low),
+    reverse_avg1: round2(cm.reverse_avg1),
+    reverse_avg7: round2(cm.reverse_avg7),
+    reverse_avg30: round2(cm.reverse_avg30),
   };
 }
 
-/** Prix applicable selon la variante choisie par l'utilisateur. */
+/**
+ * Prix applicable selon la variante possédée. Cardmarket cote séparément la
+ * version reverse ; le holo d'une carte ancienne EST la carte, il n'a donc pas
+ * de cote distincte et retombe sur le prix principal.
+ */
 export function resolvePrice(price: CardPriceRow | null, isReverse: boolean) {
   if (!price) return { trend: null, low: null, avg30: null };
-  return isReverse
-    ? { trend: price.reverse_trend, low: price.reverse_low, avg30: price.reverse_avg30 }
-    : { trend: price.trend, low: price.low, avg30: price.avg30 };
+
+  if (isReverse && price.reverse_trend !== null) {
+    return { trend: price.reverse_trend, low: price.reverse_low, avg30: price.reverse_avg30 };
+  }
+  return { trend: price.trend, low: price.low, avg30: price.avg30 };
 }
 
 /**
  * Variation 30 jours en % : écart entre la tendance actuelle et la moyenne des
- * 30 derniers jours. Retourne null si l'une des deux valeurs manque, pour ne
- * jamais afficher une variation inventée.
+ * 30 derniers jours. null si l'une des deux manque, pour ne jamais afficher une
+ * variation inventée.
  */
 export function variation30d(trend: number | null, avg30: number | null): number | null {
   if (trend === null || avg30 === null || avg30 === 0) return null;
   return Math.round(((trend - avg30) / avg30) * 1000) / 10;
 }
 
-/** Une carte est considérée stable en deçà de ce seuil (bruit de marché). */
+/** En deçà de ce seuil, on considère la carte stable (bruit de marché). */
 const STABLE_THRESHOLD_PCT = 1;
 
 export type GaugeInput = {
@@ -83,8 +88,7 @@ export function computeGauge(items: GaugeInput[]) {
     }
   }
 
-  const total = up + down + stable;
-  return { up, down, stable, total };
+  return { up, down, stable, total: up + down + stable };
 }
 
 export function formatEur(value: number | null): string {
@@ -93,9 +97,4 @@ export function formatEur(value: number | null): string {
     style: "currency",
     currency: "EUR",
   }).format(value);
-}
-
-export function ebaySearchUrl(cardName: string, number: string, setTotal: number) {
-  const q = `${cardName} ${number}/${setTotal} carte pokemon`;
-  return `https://www.ebay.fr/sch/i.html?_nkw=${encodeURIComponent(q)}`;
 }

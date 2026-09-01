@@ -1,30 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { canAddCard, type Plan } from "@/lib/plans";
-import { createAdminClient } from "@/lib/supabase/admin";
-import { getCardById } from "@/lib/poketcg";
-import { cacheCardAndPrices } from "@/lib/cards";
-
-/**
- * Le scan ne persiste que le candidat affiché, pour rester rapide. Si
- * l'utilisateur en choisit un autre, la carte n'est pas encore au référentiel :
- * on l'y met ici, faute de quoi la clé étrangère rejetterait l'ajout.
- */
-async function ensureCardCached(cardId: string): Promise<boolean> {
-  const admin = createAdminClient();
-  const { data } = await admin
-    .from("pokemon_cards")
-    .select("id")
-    .eq("id", cardId)
-    .maybeSingle();
-  if (data) return true;
-
-  const card = await getCardById(cardId).catch(() => null);
-  if (!card) return false;
-
-  await cacheCardAndPrices(card);
-  return true;
-}
+import { ensureCardCached } from "@/lib/cards";
 
 export async function POST(request: Request) {
   const supabase = await createClient();

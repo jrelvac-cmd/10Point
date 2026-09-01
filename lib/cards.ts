@@ -1,5 +1,5 @@
 import { createAdminClient } from "./supabase/admin";
-import { getCardById, type PokeTcgCard } from "./poketcg";
+import { getCardById, type TcgdexCard } from "./tcgdex";
 import { extractPrices, type CardPriceRow } from "./pricing";
 
 const PRICE_TTL_HOURS = 24;
@@ -9,22 +9,24 @@ const PRICE_TTL_HOURS = 24;
  * Le snapshot quotidien alimente price_history, qui nous construit un
  * historique interne indépendant de Cardmarket.
  */
-export async function cacheCardAndPrices(card: PokeTcgCard, nameFr?: string | null) {
+export async function cacheCardAndPrices(card: TcgdexCard) {
   const admin = createAdminClient();
   const prices = extractPrices(card);
 
   const { error: cardError } = await admin.from("pokemon_cards").upsert(
     {
       id: card.id,
+      // TCGdex indexe en français : le nom lu sur la carte est celui du
+      // référentiel, il n'y a plus de traduction à conserver séparément.
       name: card.name,
-      name_fr: nameFr ?? null,
-      set_name: card.set.name,
-      set_id: card.set.id,
-      number: card.number,
-      set_printed_total: card.set.printedTotal ?? card.set.total ?? null,
-      rarity: card.rarity ?? null,
-      image_small: card.images.small,
-      image_large: card.images.large,
+      name_fr: card.name,
+      set_name: card.setName,
+      set_id: card.setId,
+      number: card.localId,
+      set_printed_total: card.setPrintedTotal,
+      rarity: card.rarity,
+      image_small: card.imageSmall,
+      image_large: card.imageLarge,
     },
     { onConflict: "id", ignoreDuplicates: false },
   );
@@ -57,7 +59,7 @@ export async function cacheCardAndPrices(card: PokeTcgCard, nameFr?: string | nu
   return prices;
 }
 
-/** Renvoie le prix en cache s'il est encore valide, sinon rappelle PokéTCG. */
+/** Renvoie le prix en cache s'il est encore valide, sinon rappelle TCGdex. */
 export async function getFreshPrices(cardId: string): Promise<CardPriceRow | null> {
   const admin = createAdminClient();
 
@@ -75,4 +77,25 @@ export async function getFreshPrices(cardId: string): Promise<CardPriceRow | nul
   if (!card) return (cached as CardPriceRow) ?? null;
 
   return cacheCardAndPrices(card);
+}
+
+/**
+ * Le scan ne persiste que le candidat affiché. Si l'utilisateur en choisit un
+ * autre, la carte n'est pas encore au référentiel : on l'y met ici, faute de
+ * quoi la clé étrangère de collection_items rejetterait l'ajout.
+ */
+export async function ensureCardCached(cardId: string): Promise<boolean> {
+  const admin = createAdminClient();
+  const { data } = await admin
+    .from("pokemon_cards")
+    .select("id")
+    .eq("id", cardId)
+    .maybeSingle();
+  if (data) return true;
+
+  const card = await getCardById(cardId).catch(() => null);
+  if (!card) return false;
+
+  await cacheCardAndPrices(card);
+  return true;
 }
