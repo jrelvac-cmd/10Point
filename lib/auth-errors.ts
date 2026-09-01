@@ -65,6 +65,15 @@ export function translateAuthError(
           "Cette adresse est refusée par le service d'envoi. Utilise une autre adresse ou connecte-toi avec Google.",
       };
 
+    // Le SMTP a refusé l'envoi (destinataire non autorisé, identifiants SMTP
+    // erronés). Le compte est créé mais aucun lien n'est parti.
+    case "unexpected_failure":
+      return {
+        kind: "generic",
+        message:
+          "Le compte est créé, mais l'email de confirmation n'a pas pu être envoyé. Réessaie dans un instant ou connecte-toi avec Google.",
+      };
+
     default:
       return { kind: "generic", message: fallback };
   }
