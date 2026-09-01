@@ -1,0 +1,24 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-gradient: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+}
+
+body {
+  background: var(--bg-gradient);
+  background-attachment: fixed;
+  color: #ffffff;
+  min-height: 100vh;
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-glass backdrop-blur-glass border border-glass-border rounded-2xl;
+  }
+
+  .glass-card-strong {
+    @apply bg-glass-strong backdrop-blur-glass-strong border border-white/25 rounded-[20px];
+  }
+}
