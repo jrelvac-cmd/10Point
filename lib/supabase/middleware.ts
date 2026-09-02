@@ -7,8 +7,17 @@ const PUBLIC_PREFIXES = [
   "/legal",
   "/api/webhooks",
   "/api/demo-login",
+  // Appelé par le planificateur de Vercel, jamais par un navigateur connecté :
+  // il se protège par son propre secret, pas par une session.
+  "/api/cron",
   "/_next",
   "/favicon",
+  // Ressources que le navigateur récupère sans session. Un manifeste protégé
+  // rendrait l'application non installable.
+  "/manifest.webmanifest",
+  "/icons/",
+  "/robots.txt",
+  "/sitemap.xml",
 ];
 const ONBOARDING_PATH = "/choisir-pseudo";
 const ONBOARDING_EXEMPT = [ONBOARDING_PATH, "/auth/callback", "/api/"];
