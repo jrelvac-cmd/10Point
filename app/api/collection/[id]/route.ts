@@ -43,12 +43,16 @@ export async function DELETE(
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "UNAUTHENTICATED" }, { status: 401 });
 
-  const { error } = await supabase
+  // Avec les règles RLS, supprimer la ligne d'un autre compte n'est pas une
+  // erreur : zéro ligne touchée. On le distingue d'une vraie suppression.
+  const { data, error } = await supabase
     .from("collection_items")
     .delete()
     .eq("id", id)
-    .eq("user_id", user.id);
+    .eq("user_id", user.id)
+    .select("id");
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (!data?.length) return NextResponse.json({ error: "NOT_FOUND" }, { status: 404 });
   return new NextResponse(null, { status: 204 });
 }

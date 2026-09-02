@@ -74,6 +74,7 @@ export async function GET(request: Request) {
 
   let refreshed = 0;
   let failed = 0;
+  let unavailable = 0;
 
   // Séquentiel et volontairement modeste : l'API TCGdex est gratuite, inutile
   // de la marteler. Les cartes non traitées le seront à l'exécution suivante.
@@ -81,7 +82,13 @@ export async function GET(request: Request) {
     try {
       const card = await getCardById(cardId);
       if (!card) {
-        failed++;
+        // Carte retirée du référentiel : on date le cache pour ne la
+        // retenter qu'après le délai normal, sinon elle échouerait à chaque
+        // exécution et masquerait les vraies pannes.
+        unavailable++;
+        await admin
+          .from("card_prices")
+          .upsert({ card_id: cardId, cached_at: new Date().toISOString() }, { onConflict: "card_id" });
         continue;
       }
       await cacheCardAndPrices(card);
@@ -95,6 +102,7 @@ export async function GET(request: Request) {
     checked: staleness.size,
     due: due.length,
     refreshed,
+    unavailable,
     failed,
   });
 }

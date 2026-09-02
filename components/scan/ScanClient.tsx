@@ -63,6 +63,10 @@ export function ScanClient({ isPro, remainingScans }: Props) {
 
   async function handleFile(file: File) {
     reset();
+    if (file.size > 10 * 1024 * 1024) {
+      setError("Image trop lourde (max 10 Mo). Réduis la qualité ou recadre la photo.");
+      return;
+    }
     setLoading(true);
 
     const body = new FormData();

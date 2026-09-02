@@ -7,6 +7,9 @@ const PUBLIC_PREFIXES = [
   "/legal",
   "/api/webhooks",
   "/api/demo-login",
+  // Ouvert par un lien (navigation, pas fetch) : la route redirige elle-même
+  // vers la connexion. Un 401 JSON afficherait une page brute à l'utilisateur.
+  "/api/checkout",
   // Appelé par le planificateur de Vercel, jamais par un navigateur connecté :
   // il se protège par son propre secret, pas par une session.
   "/api/cron",
@@ -56,6 +59,12 @@ export async function updateSession(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (!user && !isPublicPath(pathname)) {
+    // Une route d'API appelée sans session doit répondre 401 en JSON : une
+    // redirection vers la page de connexion (du HTML) ferait échouer le client
+    // avec un message trompeur au lieu de l'inviter à se reconnecter.
+    if (pathname.startsWith("/api/")) {
+      return NextResponse.json({ error: "UNAUTHENTICATED" }, { status: 401 });
+    }
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("next", pathname);

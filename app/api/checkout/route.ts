@@ -14,7 +14,8 @@ export async function GET(request: Request) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { searchParams, origin } = new URL(request.url);
+  const { searchParams } = new URL(request.url);
+  const origin = APP_URL;
   const key = searchParams.get("plan") as PaidPlanKey | null;
 
   if (!user) {

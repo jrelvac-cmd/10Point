@@ -56,7 +56,27 @@ export async function POST(request: Request) {
     );
   }
 
-  const formData = await request.formData();
+  // Le corps est lu en entier puis plafonné : on ne peut pas se fier à
+  // Content-Length (absent en transfert par morceaux), et laisser formData()
+  // échouer sur un envoi tronqué donnait une 500 illisible.
+  const declared = Number(request.headers.get("content-length") ?? 0);
+  if (declared > MAX_BYTES + 64 * 1024) {
+    return fail("TOO_LARGE", "Image trop lourde (max 10 Mo).", 413);
+  }
+
+  let formData: FormData;
+  try {
+    const raw = await request.arrayBuffer();
+    if (raw.byteLength > MAX_BYTES + 64 * 1024) {
+      return fail("TOO_LARGE", "Image trop lourde (max 10 Mo).", 413);
+    }
+    formData = await new Response(raw, { headers: request.headers }).formData();
+  } catch {
+    return fail(
+      "BAD_REQUEST",
+      "Envoi invalide ou trop lourd. Réessaie avec une image JPG, PNG ou WEBP de moins de 10 Mo.",
+    );
+  }
   const file = formData.get("image");
   if (!(file instanceof File)) return fail("NO_IMAGE", "Aucune image reçue.");
   if (file.size > MAX_BYTES) return fail("TOO_LARGE", "Image trop lourde (max 10 Mo).");

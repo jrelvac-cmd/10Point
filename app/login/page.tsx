@@ -6,8 +6,6 @@ import { createClient } from "@/lib/supabase/client";
 import { APP_NAME, APP_URL } from "@/lib/constants";
 import { translateAuthError, type AuthErrorKind } from "@/lib/auth-errors";
 
-export const dynamic = "force-dynamic";
-
 type Mode = "signin" | "signup";
 
 export default function LoginPage() {
