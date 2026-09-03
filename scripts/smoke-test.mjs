@@ -71,6 +71,11 @@ async function createUser(tag) {
   return { id, email, cookie, asUser, username: `smoke_${tag}_${stamp}` };
 }
 
+/** Le planificateur Vercel s'authentifie par ce secret ; on l'imite. */
+const CRON_HEADERS = process.env.CRON_SECRET
+  ? { authorization: `Bearer ${process.env.CRON_SECRET}` }
+  : {};
+
 async function api(user, path, init = {}) {
   const res = await fetch(`${BASE}${path}`, {
     redirect: "manual",
@@ -314,7 +319,18 @@ try {
   // ---------------------------------------------------------------------
   section("7. Paiement et webhooks (sans clés Whop)");
   const ck = await api(A, "/api/checkout?plan=lifetime");
-  check("checkout sans URL configurée → retour /pricing avec erreur", ck.status === 307 && (ck.location ?? "").includes("paiement_indisponible"), `→ ${ck.location}`);
+  const configured = Boolean(process.env.WHOP_CHECKOUT_URL_LIFETIME);
+  check(
+    configured
+      ? "checkout → redirige vers Whop avec l'identifiant du compte"
+      : "checkout sans URL configurée → retour /pricing avec erreur",
+    ck.status === 307 &&
+      (configured
+        ? (ck.location ?? "").startsWith("https://whop.com/") &&
+          (ck.location ?? "").includes(encodeURIComponent(A.id))
+        : (ck.location ?? "").includes("paiement_indisponible")),
+    `→ ${(ck.location ?? "").slice(0, 90)}`,
+  );
   const ckBad = await api(A, "/api/checkout?plan=gratuit");
   check("plan inconnu → /pricing?error=plan_inconnu", (ckBad.location ?? "").includes("plan_inconnu"));
   const ckAnon = await api(null, "/api/checkout?plan=lifetime");
@@ -328,13 +344,13 @@ try {
   // ---------------------------------------------------------------------
   section("8. Cron de rafraîchissement");
   await admin.from("card_prices").update({ cached_at: new Date(Date.now() - 3 * 24 * 3600e3).toISOString() }).eq("card_id", cardId);
-  const cron = await api(null, "/api/cron/refresh-prices");
+  const cron = await api(null, "/api/cron/refresh-prices", { headers: CRON_HEADERS });
   check("cron → 200, carte due rafraîchie, aucun échec", cron.status === 200 && cron.body?.refreshed >= 1 && cron.body?.failed === 0, JSON.stringify(cron.body));
   await admin.from("pokemon_cards").insert({ id: `smoke-${stamp}-ghost`, name: "Fantôme" });
   await admin.from("collection_items").insert({ user_id: A.id, card_id: `smoke-${stamp}-ghost`, quantity: 1 });
   created.cardIds.push(`smoke-${stamp}-ghost`);
-  const cron2 = await api(null, "/api/cron/refresh-prices");
-  const cron3 = await api(null, "/api/cron/refresh-prices");
+  const cron2 = await api(null, "/api/cron/refresh-prices", { headers: CRON_HEADERS });
+  const cron3 = await api(null, "/api/cron/refresh-prices", { headers: CRON_HEADERS });
   check("carte absente du référentiel → comptée « unavailable », pas retentée", cron2.body?.unavailable === 1 && cron3.body?.due === 0, `1er: ${JSON.stringify(cron2.body)} 2e: ${JSON.stringify(cron3.body)}`);
   const { data: hist } = await admin.from("price_history").select("snapshot_date").eq("card_id", cardId).eq("snapshot_date", new Date().toISOString().slice(0, 10));
   check("snapshot du jour dans price_history", (hist ?? []).length === 1);
@@ -343,6 +359,9 @@ try {
 
   // ---------------------------------------------------------------------
   section("9. Mode démo");
+  const cronNoAuth = await api(null, "/api/cron/refresh-prices");
+  check("cron sans le secret → 401", !process.env.CRON_SECRET || cronNoAuth.status === 401, `HTTP ${cronNoAuth.status}`);
+
   const demo = await api(null, "/api/demo-login", { method: "POST" });
   check("démo activée en local → identifiants renvoyés", demo.status === 200 && demo.body?.email, `HTTP ${demo.status}`);
 } catch (e) {

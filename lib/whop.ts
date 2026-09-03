@@ -28,27 +28,22 @@ export function checkoutUrlFor(key: PaidPlanKey): string | null {
   return urls[key] ?? null;
 }
 
-function planIdFor(key: PaidPlanKey): string | undefined {
-  return {
-    monthly: process.env.WHOP_PLAN_MONTHLY_ID,
-    yearly: process.env.WHOP_PLAN_YEARLY_ID,
-    lifetime: process.env.WHOP_PLAN_LIFETIME_ID,
-  }[key];
-}
-
-/** Quel plan interne accorde un identifiant de plan Whop donné. */
-export function planFromWhopPlanId(whopPlanId: string | null | undefined): Plan {
-  if (!whopPlanId) return "pro";
-  if (whopPlanId === planIdFor("lifetime")) return "lifetime";
-  return "pro";
-}
-
 /**
- * Statuts Whop qui donnent effectivement accès. « trialing » en fait partie :
- * l'essai de 7 jours doit ouvrir les fonctions Pro. « canceling » aussi, car
- * l'abonnement reste actif jusqu'à la fin de la période déjà payée.
+ * Statuts Whop qui donnent effectivement accès.
+ *
+ * « trialing » en fait partie : l'essai de 7 jours doit ouvrir les fonctions
+ * Pro. « canceling » aussi, car l'abonnement reste actif jusqu'à la fin de la
+ * période déjà payée. « completed » est le statut d'un achat unique dont le
+ * paiement est allé au bout — c'est précisément le cas du Lifetime, qui
+ * perdrait son accès s'il en était exclu.
  */
-const ACTIVE_STATUSES = new Set(["active", "trialing", "canceling", "past_due"]);
+const ACTIVE_STATUSES = new Set([
+  "active",
+  "trialing",
+  "canceling",
+  "past_due",
+  "completed",
+]);
 
 export function isActiveStatus(status: string | null | undefined): boolean {
   return status ? ACTIVE_STATUSES.has(status) : false;
@@ -68,6 +63,20 @@ export type ResolvedMembership = {
   active: boolean;
   expiresAt: string | null;
 };
+
+/**
+ * Distingue un accès à vie d'un abonnement.
+ *
+ * Déduit de la donnée elle-même plutôt que d'un identifiant de plan à
+ * configurer : un abonnement a toujours une fin de période de facturation, un
+ * achat unique n'en a aucune. Une variable d'environnement oubliée ou erronée
+ * aurait silencieusement rétrogradé les acheteurs Lifetime en abonnés.
+ */
+function planFromMembership(raw: Record<string, unknown>): Plan {
+  const hasRenewal =
+    typeof raw.renewal_period_end === "string" && raw.renewal_period_end.length > 0;
+  return hasRenewal ? "pro" : "lifetime";
+}
 
 /**
  * Relit l'état d'un abonnement auprès de Whop. Sert de filet quand un webhook
@@ -95,7 +104,6 @@ export function normalizeMembership(raw: Record<string, unknown>): ResolvedMembe
 
   const status = typeof raw.status === "string" ? raw.status : null;
   const user = (raw.user ?? {}) as Record<string, unknown>;
-  const plan = (raw.plan ?? {}) as Record<string, unknown>;
 
   // Lifetime : Whop ne renvoie pas de fin de période.
   const end =
@@ -105,7 +113,7 @@ export function normalizeMembership(raw: Record<string, unknown>): ResolvedMembe
     membershipId: id,
     whopUserId: typeof user.id === "string" ? user.id : null,
     email: typeof user.email === "string" ? user.email : null,
-    plan: planFromWhopPlanId(typeof plan.id === "string" ? plan.id : null),
+    plan: planFromMembership(raw),
     active: isActiveStatus(status),
     expiresAt: end,
   };
