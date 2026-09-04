@@ -1,18 +1,28 @@
-import { formatEur } from "@/lib/pricing";
+import { formatEur, formatPct, type CollectionVariation, type GaugeBreakdown } from "@/lib/pricing";
+import { collectionLimitFor, type Plan } from "@/lib/plans";
+import { cn } from "@/lib/utils";
 
 type Props = {
-  up: number;
-  down: number;
-  stable: number;
-  total: number;
-  variationEur: number | null;
-  variationPct: number | null;
+  totalValue: number;
+  gauge: GaugeBreakdown;
+  variation: CollectionVariation | null;
+  cardCount: number;
+  distinctCount: number;
+  plan: Plan;
 };
 
-const RADIUS = 100;
-const STROKE = 18;
 const CX = 120;
-const CY = 120;
+const CY = 134;
+const RADIUS = 98;
+const STROKE = 30;
+/** Écart angulaire entre deux segments, comme sur la maquette. */
+const GAP_DEG = 7;
+
+const COLORS = {
+  down: "#F2A0A0",
+  stable: "#F1F2F9",
+  up: "#5561B9",
+} as const;
 
 /** Point du demi-cercle pour un angle donné (180° = gauche, 0° = droite). */
 function polar(angleDeg: number) {
@@ -28,71 +38,115 @@ function arc(fromDeg: number, toDeg: number) {
 }
 
 /**
- * Jauge demi-cercle : la longueur de chaque arc est proportionnelle à la
- * VALEUR des cartes concernées, pas à leur nombre. Une carte à 300 € pèse donc
- * plus qu'une carte à 1 €, ce qui reflète la santé réelle de la collection.
+ * Jauge demi-cercle. De gauche à droite : les cartes qui ont perdu plus de 5 %
+ * sur 30 jours (rouge), celles restées dans ±5 % (blanc), celles qui ont pris
+ * plus de 5 % (bleu). Chaque arc est proportionnel au NOMBRE de cartes.
  */
-export function HeroGauge({ up, down, stable, total, variationEur, variationPct }: Props) {
-  const segments =
-    total > 0
-      ? [
-          { value: up, color: "#4338CA" },
-          { value: stable, color: "rgba(255,255,255,0.15)" },
-          { value: down, color: "#A5B4FC" },
-        ]
-      : [{ value: 1, color: "rgba(255,255,255,0.15)" }];
+export function HeroGauge({ totalValue, gauge, variation, cardCount, distinctCount, plan }: Props) {
+  const segments = [
+    { key: "down", value: gauge.down, color: COLORS.down },
+    { key: "stable", value: gauge.stable, color: COLORS.stable },
+    { key: "up", value: gauge.up, color: COLORS.up },
+  ].filter((s) => s.value > 0);
 
-  const totalForRatio = total > 0 ? total : 1;
+  // Collection vide : un seul arc blanc, pour garder la silhouette.
+  const drawn = segments.length ? segments : [{ key: "empty", value: 1, color: COLORS.stable }];
+  const sum = drawn.reduce((acc, s) => acc + s.value, 0);
+  const usable = 180 - GAP_DEG * (drawn.length - 1);
 
   let cursor = 180;
-  const paths = segments
-    .filter((s) => s.value > 0)
-    .map((s, i) => {
-      const sweep = (s.value / totalForRatio) * 180;
-      const from = cursor;
-      const to = cursor - sweep;
-      cursor = to;
-      return <path key={i} d={arc(from, to)} stroke={s.color} strokeWidth={STROKE} fill="none" strokeLinecap="butt" />;
-    });
+  const paths = drawn.map((s, i) => {
+    const sweep = (s.value / sum) * usable;
+    const from = cursor;
+    const to = cursor - sweep;
+    cursor = to - GAP_DEG;
+    return (
+      <path
+        key={s.key}
+        d={arc(from, to)}
+        stroke={s.color}
+        strokeWidth={STROKE}
+        fill="none"
+        strokeLinecap="butt"
+        filter={i === 0 || s.color === COLORS.stable ? "url(#gauge-shadow)" : undefined}
+      />
+    );
+  });
 
-  const positive = (variationEur ?? 0) >= 0;
+  const limit = collectionLimitFor(plan);
+  const positive = (variation?.eur ?? 0) >= 0;
 
   return (
-    <section className="glass-card-strong flex flex-col items-center gap-3 px-6 py-6">
-      <span className="text-[11px] font-medium uppercase tracking-wide text-text-secondary">
-        Valeur collection
-      </span>
+    <section className="glass-card-strong flex flex-col gap-2 px-5 pb-4 pt-5">
+      <h2 className="text-sm font-bold text-text-primary">Ma Collection</h2>
 
-      <div className="relative">
-        <svg viewBox="0 0 240 140" className="w-full max-w-[260px]" role="img" aria-label="Répartition hausse et baisse sur 30 jours">
+      <div className="relative -mt-1">
+        <svg
+          viewBox="0 0 240 150"
+          className="mx-auto w-full max-w-[280px]"
+          role="img"
+          aria-label={`Sur 30 jours : ${gauge.down} cartes en baisse, ${gauge.stable} stables, ${gauge.up} en hausse`}
+        >
+          <defs>
+            <filter id="gauge-shadow" x="-20%" y="-20%" width="140%" height="140%">
+              <feDropShadow dx="0" dy="3" stdDeviation="3" floodColor="#1c2160" floodOpacity="0.18" />
+            </filter>
+          </defs>
           {paths}
         </svg>
-        <div className="absolute inset-x-0 bottom-2 flex flex-col items-center">
-          <span className="font-mono text-3xl text-text-primary">{formatEur(total)}</span>
-          {variationPct !== null && (
-            <span className={`font-mono text-xs ${positive ? "text-up" : "text-down"}`}>
-              {positive ? "+" : ""}
-              {formatEur(variationEur)} ({positive ? "+" : ""}
-              {variationPct} %) sur 30 j
-            </span>
-          )}
+        <div className="absolute inset-x-0 bottom-2 flex justify-center">
+          <span className="text-[32px] font-extrabold leading-none tracking-tight text-text-primary">
+            {formatEur(totalValue)}
+          </span>
         </div>
       </div>
 
-      <div className="flex w-full gap-2">
-        <Legend label="En hausse" value={up} color="#4338CA" />
-        <Legend label="En baisse" value={down} color="#A5B4FC" />
+      <div className="glass-inner mt-1 grid grid-cols-2 divide-x divide-black/10 px-2 py-3">
+        <Stat
+          dotClass={variation === null ? "bg-text-muted" : positive ? "bg-gauge-up" : "bg-gauge-down"}
+          label="Variation 30 j"
+          value={variation ? formatPct(variation.pct) : "—"}
+          sub={variation ? `${positive ? "+" : ""}${formatEur(variation.eur)}` : "pas encore mesurée"}
+          valueClass={variation === null ? undefined : positive ? "text-[#2f8f5b]" : "text-[#c2453a]"}
+        />
+        <Stat
+          dotClass="bg-text-muted"
+          label="Cartes"
+          value={cardCount.toLocaleString("fr-FR")}
+          sub={
+            limit === null
+              ? `${distinctCount} référence${distinctCount > 1 ? "s" : ""}`
+              : `${distinctCount} / ${limit} références`
+          }
+        />
       </div>
     </section>
   );
 }
 
-function Legend({ label, value, color }: { label: string; value: number; color: string }) {
+function Stat({
+  dotClass,
+  label,
+  value,
+  sub,
+  valueClass,
+}: {
+  dotClass: string;
+  label: string;
+  value: string;
+  sub: string;
+  valueClass?: string;
+}) {
   return (
-    <div className="flex flex-1 items-center gap-2 rounded-xl border border-glass-border bg-glass px-3 py-2">
-      <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: color }} />
-      <span className="text-[11px] text-text-secondary">{label}</span>
-      <span className="ml-auto font-mono text-xs text-text-primary">{formatEur(value)}</span>
+    <div className="flex flex-col gap-0.5 px-3">
+      <span className="flex items-center gap-1.5 text-[11px] text-text-secondary">
+        <span className={cn("h-1.5 w-1.5 rounded-full", dotClass)} />
+        {label}
+      </span>
+      <span className={cn("text-base font-bold leading-tight text-text-primary", valueClass)}>
+        {value}
+      </span>
+      <span className="text-[11px] text-text-muted">{sub}</span>
     </div>
   );
 }

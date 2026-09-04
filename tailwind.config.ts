@@ -1,5 +1,12 @@
 import type { Config } from "tailwindcss";
 
+/**
+ * Les couleurs de surface et de texte sont des variables CSS : le même
+ * composant s'affiche en verre sombre sur les pages publiques et en verre
+ * clair dans l'application (voir globals.css, classe `theme-app`).
+ * L'accent reste une valeur fixe car il est utilisé avec des opacités
+ * (`bg-accent/40`), ce que Tailwind ne sait pas dériver d'une variable.
+ */
 const config: Config = {
   darkMode: "class",
   content: [
@@ -16,14 +23,15 @@ const config: Config = {
           to: "#24243e",
         },
         glass: {
-          DEFAULT: "rgba(255, 255, 255, 0.08)",
-          strong: "rgba(255, 255, 255, 0.14)",
-          border: "rgba(255, 255, 255, 0.15)",
+          DEFAULT: "var(--glass)",
+          strong: "var(--glass-strong)",
+          border: "var(--glass-border)",
+          inner: "var(--glass-inner)",
         },
         text: {
-          primary: "#FFFFFF",
-          secondary: "rgba(255, 255, 255, 0.60)",
-          muted: "rgba(255, 255, 255, 0.35)",
+          primary: "var(--text-primary)",
+          secondary: "var(--text-secondary)",
+          muted: "var(--text-muted)",
         },
         accent: {
           DEFAULT: "#6366F1",
@@ -33,6 +41,11 @@ const config: Config = {
         up: "#34D399",
         down: "#FB923C",
         warn: "#FBBF24",
+        gauge: {
+          up: "#5561B9",
+          stable: "#F1F2F9",
+          down: "#F2A0A0",
+        },
       },
       fontFamily: {
         mono: ["var(--font-geist-mono)", "ui-monospace", "monospace"],
@@ -41,6 +54,10 @@ const config: Config = {
       backdropBlur: {
         glass: "16px",
         "glass-strong": "24px",
+      },
+      boxShadow: {
+        card: "var(--shadow-card)",
+        inner: "var(--shadow-inner)",
       },
     },
   },

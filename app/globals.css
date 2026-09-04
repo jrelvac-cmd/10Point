@@ -2,23 +2,59 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Thème par défaut : verre sombre (pages publiques, connexion). */
 :root {
   --bg-gradient: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+  --glass: rgba(255, 255, 255, 0.08);
+  --glass-strong: rgba(255, 255, 255, 0.14);
+  --glass-border: rgba(255, 255, 255, 0.15);
+  --glass-inner: rgba(255, 255, 255, 0.06);
+  --text-primary: #ffffff;
+  --text-secondary: rgba(255, 255, 255, 0.6);
+  --text-muted: rgba(255, 255, 255, 0.35);
+  --shadow-card: none;
+  --shadow-inner: none;
+}
+
+/*
+ * Thème de l'application connectée, d'après la maquette du fondateur : fond
+ * qui descend du lavande clair au bleu profond, cartes blanches givrées avec
+ * une ombre douce, texte encre.
+ */
+.theme-app {
+  --bg-gradient: linear-gradient(180deg, #eceef8 0%, #d3d7f2 22%, #7d86dc 58%, #3a3fa6 100%);
+  --glass: rgba(255, 255, 255, 0.58);
+  --glass-strong: rgba(255, 255, 255, 0.74);
+  --glass-border: rgba(255, 255, 255, 0.7);
+  --glass-inner: rgba(255, 255, 255, 0.92);
+  --text-primary: #1b1f3b;
+  --text-secondary: rgba(27, 31, 59, 0.64);
+  --text-muted: rgba(27, 31, 59, 0.42);
+  --shadow-card: 0 14px 36px rgba(28, 33, 96, 0.14);
+  --shadow-inner: 0 6px 18px rgba(28, 33, 96, 0.1);
+  background: var(--bg-gradient);
+  background-attachment: fixed;
+  color: var(--text-primary);
 }
 
 body {
   background: var(--bg-gradient);
   background-attachment: fixed;
-  color: #ffffff;
+  color: var(--text-primary);
   min-height: 100vh;
 }
 
 @layer components {
   .glass-card {
-    @apply bg-glass backdrop-blur-glass border border-glass-border rounded-2xl;
+    @apply bg-glass backdrop-blur-glass border border-glass-border rounded-2xl shadow-card;
   }
 
   .glass-card-strong {
-    @apply bg-glass-strong backdrop-blur-glass-strong border border-white/25 rounded-[20px];
+    @apply bg-glass-strong backdrop-blur-glass-strong border border-glass-border rounded-[28px] shadow-card;
+  }
+
+  /* Carte blanche posée à l'intérieur d'une carte givrée (statistiques, listes). */
+  .glass-inner {
+    @apply bg-glass-inner rounded-[22px] shadow-inner;
   }
 }

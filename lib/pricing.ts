@@ -65,30 +65,76 @@ export function variation30d(trend: number | null, avg30: number | null): number
   return Math.round(((trend - avg30) / avg30) * 1000) / 10;
 }
 
-/** En deçà de ce seuil, on considère la carte stable (bruit de marché). */
-const STABLE_THRESHOLD_PCT = 1;
+/**
+ * En deçà de ±5 % sur 30 jours, une carte est considérée stable : c'est le
+ * bruit normal du marché, pas une tendance. Au-delà, elle a monté ou baissé.
+ */
+export const STABLE_THRESHOLD_PCT = 5;
 
 export type GaugeInput = {
-  value: number;
+  /** Nombre d'exemplaires possédés : trois Pikachu pèsent trois cartes. */
+  count: number;
   variationPct: number | null;
 };
 
-export function computeGauge(items: GaugeInput[]) {
+export type GaugeBreakdown = {
+  up: number;
+  stable: number;
+  down: number;
+  total: number;
+};
+
+/**
+ * Répartition de la collection en NOMBRE de cartes, pas en valeur : la jauge
+ * répond à « combien de mes cartes montent, stagnent, baissent ». Une carte
+ * sans variation connue est rangée parmi les stables : on ne sait rien
+ * affirmer sur elle, et l'exclure ferait disparaître une partie de la
+ * collection du visuel.
+ */
+export function computeGauge(items: GaugeInput[]): GaugeBreakdown {
   let up = 0;
   let down = 0;
   let stable = 0;
 
-  for (const { value, variationPct } of items) {
-    if (variationPct === null || Math.abs(variationPct) < STABLE_THRESHOLD_PCT) {
-      stable += value;
+  for (const { count, variationPct } of items) {
+    if (variationPct === null || Math.abs(variationPct) <= STABLE_THRESHOLD_PCT) {
+      stable += count;
     } else if (variationPct > 0) {
-      up += value;
+      up += count;
     } else {
-      down += value;
+      down += count;
     }
   }
 
   return { up, down, stable, total: up + down + stable };
+}
+
+export type CollectionVariation = {
+  eur: number;
+  pct: number;
+};
+
+/**
+ * Variation de la collection entière sur 30 jours : différence entre la
+ * valeur actuelle et ce que valaient les mêmes cartes il y a 30 jours. Seules
+ * les lignes dont on connaît les deux prix entrent dans le calcul, pour ne pas
+ * afficher un écart trompeur. null tant qu'aucune ligne n'est mesurable.
+ */
+export function computeCollectionVariation(
+  items: { lineValue: number | null; variationPct: number | null }[],
+): CollectionVariation | null {
+  let now = 0;
+  let then = 0;
+  for (const { lineValue, variationPct } of items) {
+    if (lineValue === null || variationPct === null) continue;
+    now += lineValue;
+    then += lineValue / (1 + variationPct / 100);
+  }
+  if (then <= 0) return null;
+  return {
+    eur: Math.round((now - then) * 100) / 100,
+    pct: Math.round(((now - then) / then) * 1000) / 10,
+  };
 }
 
 export function formatEur(value: number | null): string {
@@ -97,4 +143,11 @@ export function formatEur(value: number | null): string {
     style: "currency",
     currency: "EUR",
   }).format(value);
+}
+
+/** Pourcentage signé, une décimale, format français : « +8,2 % ». */
+export function formatPct(value: number | null): string {
+  if (value === null) return "—";
+  const sign = value > 0 ? "+" : "";
+  return `${sign}${value.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} %`;
 }

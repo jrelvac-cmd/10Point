@@ -265,7 +265,12 @@ try {
   const pageCol = await api(A, "/collection");
   check("Free avec 101 cartes → bandeau « 100 premières » affiché", pageCol.status === 200 && String(pageCol.body).includes("100 premières"), `HTTP ${pageCol.status}`);
   const pageHome = await api(A, "/home");
-  check("tableau de bord → 200 avec jauge", pageHome.status === 200 && String(pageHome.body).includes("Valeur collection"));
+  check(
+    "tableau de bord → 200 avec jauge et variation 30 j",
+    pageHome.status === 200 &&
+      String(pageHome.body).includes("Ma Collection") &&
+      String(pageHome.body).includes("Variation 30 j"),
+  );
   // Les cartes factices ont servi ; on les retire pour que le cron ne les voie pas.
   await admin.from("collection_items").delete().in("card_id", fakeIds);
   await admin.from("pokemon_cards").delete().in("id", fakeIds);
