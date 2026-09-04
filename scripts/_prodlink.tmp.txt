@@ -1,0 +1,1 @@
+https://imoolrpbiccomjplklhh.supabase.co/auth/v1/verify?token=01b0a9b7ac63609dba1e074112178d27eb2835bd72c2b04c79e2a3ea&type=signup&redirect_to=https://10-point-kappa.vercel.app/auth/callback

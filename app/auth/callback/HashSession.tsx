@@ -1,23 +1,25 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
 import { safeNextPath } from "@/lib/auth-redirect";
 
 /**
  * Récupère la session quand Supabase la renvoie dans le fragment d'URL
  * (`#access_token=…`), ce qu'il fait pour les liens de confirmation d'email.
  *
- * Un fragment n'est jamais transmis au serveur : sans ce composant côté
- * navigateur, le jeton était simplement perdu et l'utilisateur qui venait de
- * valider son adresse retombait sur la page de connexion.
+ * Un fragment n'est jamais transmis au serveur : sans ce composant, le jeton
+ * était perdu et l'utilisateur qui venait de valider son adresse retombait sur
+ * la page de connexion. Les jetons sont transmis à une route serveur qui écrit
+ * les cookies de session, plutôt qu'au client navigateur : celui-ci fonctionne
+ * en parcours PKCE et rejette ce format de jetons.
  */
 export default function HashSession({ next }: { next: string }) {
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
+    // Lu tout de suite : certaines bibliothèques effacent le fragment au
+    // chargement de la page.
     const params = new URLSearchParams(window.location.hash.replace(/^#/, ""));
-
     const accessToken = params.get("access_token");
     const refreshToken = params.get("refresh_token");
     const target = safeNextPath(next, window.location.origin);
@@ -36,10 +38,13 @@ export default function HashSession({ next }: { next: string }) {
       return;
     }
 
-    createClient()
-      .auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
-      .then(({ error }) => {
-        if (error) {
+    fetch("/api/auth/session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ access_token: accessToken, refresh_token: refreshToken }),
+    })
+      .then((res) => {
+        if (!res.ok) {
           setFailed(true);
           return;
         }

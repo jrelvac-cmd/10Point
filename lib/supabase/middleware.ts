@@ -8,6 +8,9 @@ const PUBLIC_PREFIXES = [
   // Retour de Google OAuth : le code d'autorisation y est échangé contre une
   // session, il n'y en a donc pas encore au moment de l'appel.
   "/auth/callback",
+  // Ouvre la session à partir des jetons d'un lien d'email : par définition,
+  // aucune session n'existe encore quand elle est appelée.
+  "/api/auth/session",
   "/api/webhooks",
   "/api/demo-login",
   // Ouvert par un lien (navigation, pas fetch) : la route redirige elle-même
