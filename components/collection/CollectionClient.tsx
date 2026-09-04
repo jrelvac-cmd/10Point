@@ -119,7 +119,7 @@ export function CollectionClient({
   if (!items.length) {
     return (
       <div className="flex flex-col gap-4 py-4">
-        <h1 className="text-xl font-semibold text-text-primary">Ma collection</h1>
+        <h1 className="text-2xl font-bold text-text-primary">Ma collection</h1>
         <div className="glass-card flex flex-col items-center gap-3 px-6 py-12 text-center">
           <p className="text-text-secondary">Ta collection est encore vide.</p>
           <p className="text-sm text-text-muted">
@@ -128,7 +128,7 @@ export function CollectionClient({
           </p>
           <Link
             href="/scan"
-            className="mt-2 rounded-2xl bg-accent px-5 py-3 text-sm font-medium text-white hover:bg-accent-dark"
+            className="mt-2 btn-primary"
           >
             Scanner une carte
           </Link>
@@ -140,8 +140,8 @@ export function CollectionClient({
   return (
     <div className="flex flex-col gap-4 py-4">
       <div className="flex items-baseline justify-between">
-        <h1 className="text-xl font-semibold text-text-primary">Ma collection</h1>
-        <span className="font-mono text-sm text-text-primary">
+        <h1 className="text-2xl font-bold text-text-primary">Ma collection</h1>
+        <span className="text-lg font-extrabold text-text-primary">
           {formatEur(totalValue)}
         </span>
       </div>
@@ -159,16 +159,14 @@ export function CollectionClient({
       )}
 
       <div className="flex flex-wrap items-center gap-2">
-        <div className="flex gap-1 rounded-full border border-glass-border bg-glass p-1">
+        <div className="pill-group">
           {SORTS.map((s) => (
             <button
               key={s.key}
               onClick={() => setSort(s.key)}
               className={cn(
-                "rounded-full px-3 py-1.5 text-xs transition-colors",
-                sort === s.key
-                  ? "bg-accent/40 text-accent-light"
-                  : "text-text-muted hover:text-text-secondary",
+                "pill",
+                sort === s.key && "pill-active",
               )}
             >
               {s.label}
@@ -179,8 +177,8 @@ export function CollectionClient({
         <button
           onClick={() => setShowFilters(!showFilters)}
           className={cn(
-            "flex items-center gap-2 rounded-full border border-glass-border px-3 py-1.5 text-xs transition-colors",
-            isFiltered ? "bg-accent/40 text-accent-light" : "bg-glass text-text-muted",
+            "pill-group flex items-center gap-2 px-3 py-2 text-xs",
+            isFiltered ? "text-accent-dark" : "text-text-muted",
           )}
         >
           <SlidersHorizontal size={13} />
@@ -210,7 +208,7 @@ export function CollectionClient({
                 setRarityFilter("");
                 setVariantFilter("");
               }}
-              className="self-start text-xs text-accent-light hover:underline"
+              className="self-start text-xs text-accent-dark hover:underline"
             >
               Réinitialiser
             </button>
@@ -238,7 +236,7 @@ export function CollectionClient({
             )}
 
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm text-text-primary">{entry.card.name}</p>
+              <p className="truncate text-sm font-semibold text-text-primary">{entry.card.name}</p>
               <p className="truncate text-xs text-text-muted">
                 {entry.card.setName}
                 {entry.card.number ? ` · ${entry.card.number}` : ""}
@@ -251,13 +249,13 @@ export function CollectionClient({
             </div>
 
             <div className="flex flex-col items-end gap-1">
-              <span className="font-mono text-sm text-text-primary">
+              <span className="text-sm font-bold text-text-primary">
                 {formatEur(entry.lineValue)}
               </span>
               {entry.variationPct !== null && (
                 <span
                   className={cn(
-                    "font-mono text-[11px]",
+                    "font-semibold text-[11px]",
                     entry.variationPct >= 0 ? "text-up" : "text-down",
                   )}
                 >
@@ -274,7 +272,7 @@ export function CollectionClient({
                 >
                   <Minus size={12} />
                 </IconButton>
-                <span className="w-6 text-center font-mono text-xs text-text-primary">
+                <span className="w-6 text-center font-semibold text-xs text-text-primary">
                   {entry.quantity}
                 </span>
                 <IconButton
@@ -303,7 +301,7 @@ export function CollectionClient({
 
 function Tag({ children }: { children: React.ReactNode }) {
   return (
-    <span className="rounded-full border border-glass-border px-2 py-0.5 text-[10px] text-text-secondary">
+    <span className="rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-semibold text-accent-dark">
       {children}
     </span>
   );
@@ -326,7 +324,7 @@ function Select({
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="min-w-0 flex-1 rounded-lg border border-glass-border bg-[#24243e] px-2 py-1.5 text-xs text-text-primary outline-none"
+        className="field min-w-0 flex-1 px-2 py-1.5 text-xs"
       >
         <option value="">Toutes</option>
         {options.map((o) => (
@@ -359,8 +357,8 @@ function IconButton({
       aria-label={label}
       title={label}
       className={cn(
-        "flex h-6 w-6 items-center justify-center rounded border border-glass-border transition-colors disabled:opacity-30",
-        danger ? "text-down hover:bg-down/15" : "text-text-secondary hover:bg-white/10",
+        "flex h-7 w-7 items-center justify-center rounded-lg bg-white shadow-inner transition-colors disabled:opacity-30",
+        danger ? "text-down hover:bg-down/10" : "text-text-secondary hover:bg-black/5",
       )}
     >
       {children}

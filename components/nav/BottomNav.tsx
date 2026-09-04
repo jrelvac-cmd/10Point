@@ -46,7 +46,7 @@ export function BottomNav() {
       <Link
         href="/scan"
         aria-label="Scanner une carte"
-        className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#4F5FE6] text-white shadow-[0_10px_24px_rgba(79,95,230,0.45)] transition-transform hover:scale-105"
+        className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-accent text-white shadow-[0_10px_24px_rgba(79,95,230,0.45)] transition-transform hover:scale-105"
       >
         <ScanLine size={24} />
       </Link>

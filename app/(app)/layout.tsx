@@ -22,7 +22,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const plan = (profile?.plan ?? "free") as Plan;
 
   return (
-    <div className="theme-app flex-1 flex flex-col pb-28">
+    <div className="flex-1 flex flex-col pb-28">
       <TopBar initials={initials} plan={plan} />
       <div className="flex-1 px-4">{children}</div>
       <BottomNav />

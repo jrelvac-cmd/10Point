@@ -107,7 +107,7 @@ export function HeroGauge({ totalValue, gauge, variation, cardCount, distinctCou
           label="Variation 30 j"
           value={variation ? formatPct(variation.pct) : "—"}
           sub={variation ? `${positive ? "+" : ""}${formatEur(variation.eur)}` : "pas encore mesurée"}
-          valueClass={variation === null ? undefined : positive ? "text-[#2f8f5b]" : "text-[#c2453a]"}
+          valueClass={variation === null ? undefined : positive ? "text-up" : "text-down"}
         />
         <Stat
           dotClass="bg-text-muted"

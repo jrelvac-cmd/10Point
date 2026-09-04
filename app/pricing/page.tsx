@@ -106,7 +106,7 @@ export default async function PricingPage({
             className={cn(
               "flex flex-col gap-4 px-5 py-6",
               plan.highlight
-                ? "glass-card-strong ring-1 ring-accent/50"
+                ? "glass-card-strong ring-2 ring-accent/60"
                 : "glass-card",
             )}
           >
@@ -116,12 +116,12 @@ export default async function PricingPage({
                   {plan.name}
                 </span>
                 {plan.highlight && (
-                  <span className="rounded-full bg-accent/30 px-2 py-0.5 text-[10px] text-accent-light">
+                  <span className="rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-semibold text-accent-dark">
                     Le plus avantageux
                   </span>
                 )}
               </div>
-              <p className="mt-2 font-mono text-2xl text-text-primary">
+              <p className="mt-2 font-semibold text-2xl text-text-primary">
                 {plan.price}
                 <span className="text-sm text-text-muted">{plan.period}</span>
               </p>
@@ -157,16 +157,13 @@ export default async function PricingPage({
                 href={user ? `/api/checkout?plan=${plan.key}` : "/login?next=/pricing"}
                 prefetch={false}
                 className={cn(
-                  "rounded-2xl px-4 py-3 text-center text-sm font-medium transition-colors",
-                  plan.highlight
-                    ? "bg-accent text-white hover:bg-accent-dark"
-                    : "border border-glass-border text-text-primary hover:bg-white/10",
+                  plan.highlight ? "btn-primary" : "btn-secondary",
                 )}
               >
                 Choisir
               </Link>
             ) : (
-              <span className="rounded-2xl border border-glass-border px-4 py-3 text-center text-sm text-text-muted">
+              <span className="btn-secondary cursor-default text-text-muted hover:bg-glass-inner">
                 Plan actuel par défaut
               </span>
             )}
@@ -174,7 +171,7 @@ export default async function PricingPage({
         ))}
       </div>
 
-      <p className="max-w-lg text-center text-[11px] text-text-muted">
+      <p className="glass-card max-w-lg px-5 py-4 text-center text-[11px] text-text-secondary">
         Paiement sécurisé par Whop. Les abonnements se renouvellent
         automatiquement et peuvent être annulés à tout moment depuis tes
         paramètres. Voir les{" "}

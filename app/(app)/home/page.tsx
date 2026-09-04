@@ -70,7 +70,7 @@ export default async function HomePage() {
           </p>
           <Link
             href="/scan"
-            className="rounded-full bg-[#4F5FE6] px-5 py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(79,95,230,0.35)] hover:brightness-110"
+            className="btn-primary"
           >
             Scanner ma première carte
           </Link>

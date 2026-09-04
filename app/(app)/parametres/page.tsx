@@ -45,7 +45,7 @@ export default async function ParametresPage({
 
   return (
     <div className="flex flex-col gap-4 py-4">
-      <h1 className="text-xl font-semibold text-text-primary">Paramètres</h1>
+      <h1 className="text-2xl font-bold text-text-primary">Paramètres</h1>
 
       {paiement === "ok" && (
         <p className="glass-card border-l-2 border-l-up px-4 py-3 text-sm text-text-primary">
@@ -55,13 +55,13 @@ export default async function ParametresPage({
       )}
 
       <section className="glass-card flex flex-col gap-3 px-5 py-5">
-        <h2 className="text-sm font-medium text-text-primary">Compte</h2>
+        <h2 className="text-sm font-bold text-text-primary">Compte</h2>
         <Row label="Nom d'utilisateur" value={profile?.username ?? "—"} />
         <Row label="Email" value={user?.email ?? "—"} />
       </section>
 
       <section className="glass-card flex flex-col gap-3 px-5 py-5">
-        <h2 className="text-sm font-medium text-text-primary">Abonnement</h2>
+        <h2 className="text-sm font-bold text-text-primary">Abonnement</h2>
         <Row label="Plan actuel" value={PLAN_LABEL[plan]} />
         {left !== null && <Row label="Scans restants ce mois" value={String(left)} />}
         {subscription.planExpiresAt && (
@@ -76,14 +76,14 @@ export default async function ParametresPage({
             href="https://whop.com/orders"
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-1 rounded-2xl border border-glass-border px-4 py-3 text-center text-sm text-text-primary hover:bg-white/10"
+            className="btn-secondary mt-1"
           >
             Gérer ou annuler mon abonnement
           </a>
         ) : (
           <Link
             href="/pricing"
-            className="mt-1 rounded-2xl bg-accent px-4 py-3 text-center text-sm font-medium text-white hover:bg-accent-dark"
+            className="mt-1 btn-primary"
           >
             Passer Pro
           </Link>

@@ -153,9 +153,9 @@ export function ScanClient({ isPro, remainingScans }: Props) {
       />
 
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-text-primary">Scanner une carte</h1>
+        <h1 className="text-2xl font-bold text-text-primary">Scanner une carte</h1>
         {scansLeft !== null && (
-          <span className="font-mono text-xs text-text-secondary">
+          <span className="font-semibold text-xs text-text-secondary">
             {scansLeft} scan{scansLeft > 1 ? "s" : ""} restant{scansLeft > 1 ? "s" : ""}
           </span>
         )}
@@ -169,8 +169,8 @@ export function ScanClient({ isPro, remainingScans }: Props) {
             setBulkValue(0);
           }}
           className={cn(
-            "glass-card px-4 py-3 text-left text-sm transition-colors",
-            bulkMode ? "bg-accent/30 text-accent-light" : "text-text-secondary",
+            "glass-card px-4 py-3 text-left text-sm font-medium transition-colors",
+            bulkMode ? "text-accent-dark ring-2 ring-accent/60" : "text-text-secondary",
           )}
         >
           {bulkMode
@@ -189,16 +189,16 @@ export function ScanClient({ isPro, remainingScans }: Props) {
         <div className="grid gap-3 sm:grid-cols-2">
           <button
             onClick={() => cameraRef.current?.click()}
-            className="glass-card flex flex-col items-center gap-2 px-6 py-10 text-text-primary transition-colors hover:bg-white/15"
+            className="glass-card flex flex-col items-center gap-2 px-6 py-10 text-text-primary transition-colors hover:bg-black/5"
           >
-            <Camera size={28} className="text-accent-light" />
+            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-accent text-white shadow-[0_10px_24px_rgba(79,95,230,0.35)]"><Camera size={26} /></span>
             <span className="text-sm font-medium">Prendre une photo</span>
           </button>
           <button
             onClick={() => fileRef.current?.click()}
-            className="glass-card flex flex-col items-center gap-2 px-6 py-10 text-text-primary transition-colors hover:bg-white/15"
+            className="glass-card flex flex-col items-center gap-2 px-6 py-10 text-text-primary transition-colors hover:bg-black/5"
           >
-            <Upload size={28} className="text-accent-light" />
+            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-accent/15 text-accent-dark"><Upload size={26} /></span>
             <span className="text-sm font-medium">Choisir un fichier</span>
           </button>
         </div>
@@ -206,7 +206,7 @@ export function ScanClient({ isPro, remainingScans }: Props) {
 
       {loading && (
         <div className="glass-card flex flex-col items-center gap-3 px-6 py-12">
-          <Loader2 className="animate-spin text-accent-light" size={28} />
+          <Loader2 className="animate-spin text-accent-dark" size={28} />
           <p className="text-sm text-text-secondary">Identification en cours…</p>
         </div>
       )}
@@ -214,7 +214,7 @@ export function ScanClient({ isPro, remainingScans }: Props) {
       {error && (
         <div className="glass-card border-l-2 border-l-down px-4 py-3">
           <p className="text-sm text-text-primary">{error}</p>
-          <button onClick={reset} className="mt-2 text-xs text-accent-light hover:underline">
+          <button onClick={reset} className="mt-2 text-xs text-accent-dark hover:underline">
             Réessayer
           </button>
         </div>
@@ -230,7 +230,7 @@ export function ScanClient({ isPro, remainingScans }: Props) {
               <button
                 key={card.id}
                 onClick={() => setSelected(card)}
-                className="glass-card flex flex-col gap-2 p-2 text-left transition-colors hover:bg-white/15"
+                className="glass-card flex flex-col gap-2 p-2 text-left transition-colors hover:bg-black/5"
               >
                 <Image
                   src={card.image_large ?? ""}
@@ -240,7 +240,7 @@ export function ScanClient({ isPro, remainingScans }: Props) {
                   className="w-full rounded-lg"
                   unoptimized
                 />
-                <span className="text-xs text-text-primary">{card.name}</span>
+                <span className="text-xs font-semibold text-text-primary">{card.name}</span>
                 <span className="text-[11px] text-text-muted">
                   {card.set_name} · {card.number}/{card.set_printed_total}
                 </span>
@@ -262,7 +262,7 @@ export function ScanClient({ isPro, remainingScans }: Props) {
               unoptimized
             />
             <div className="flex flex-col gap-1">
-              <h2 className="font-semibold text-text-primary">{selected.name}</h2>
+              <h2 className="text-lg font-bold text-text-primary">{selected.name}</h2>
               <p className="text-xs text-text-secondary">
                 {selected.set_name} · {selected.number}/{selected.set_printed_total}
               </p>
@@ -270,13 +270,13 @@ export function ScanClient({ isPro, remainingScans }: Props) {
                 <p className="text-xs text-text-muted">{selected.rarity}</p>
               )}
 
-              <p className="mt-2 font-mono text-2xl text-text-primary">
+              <p className="mt-2 text-[28px] font-extrabold tracking-tight text-text-primary">
                 {formatEur(price.trend)}
               </p>
               {price.variation_30d !== null && (
                 <p
                   className={cn(
-                    "font-mono text-xs",
+                    "font-semibold text-xs",
                     price.variation_30d >= 0 ? "text-up" : "text-down",
                   )}
                 >
@@ -284,7 +284,7 @@ export function ScanClient({ isPro, remainingScans }: Props) {
                   {price.variation_30d} % sur 30 j
                 </p>
               )}
-              <p className="mt-1 font-mono text-[11px] text-text-muted">
+              <p className="mt-1 font-semibold text-[11px] text-text-muted">
                 bas {formatEur(price.low)} · moy. 30 j {formatEur(price.avg30)}
               </p>
             </div>
@@ -320,13 +320,13 @@ export function ScanClient({ isPro, remainingScans }: Props) {
               onChange={(e) =>
                 setQuantity(Math.min(99, Math.max(1, Number(e.target.value) || 1)))
               }
-              className="glass-card w-20 bg-transparent px-3 py-2 text-center font-mono text-sm text-text-primary outline-none"
+              className="glass-card w-20 bg-transparent px-3 py-2 text-center font-semibold text-sm text-text-primary outline-none"
             />
             <a
               href={selected.ebay_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="ml-auto flex items-center gap-1 text-xs text-accent-light hover:underline"
+              className="ml-auto flex items-center gap-1 text-xs text-accent-dark hover:underline"
             >
               Voir sur eBay <ExternalLink size={12} />
             </a>
@@ -340,13 +340,13 @@ export function ScanClient({ isPro, remainingScans }: Props) {
               <div className="flex gap-2">
                 <button
                   onClick={reset}
-                  className="glass-card flex-1 px-4 py-3 text-sm text-text-primary hover:bg-white/15"
+                  className="btn-secondary flex-1"
                 >
                   Scanner une autre carte
                 </button>
                 <Link
                   href="/collection"
-                  className="glass-card flex-1 px-4 py-3 text-center text-sm text-text-primary hover:bg-white/15"
+                  className="btn-secondary flex-1"
                 >
                   Voir ma collection
                 </Link>
@@ -357,7 +357,7 @@ export function ScanClient({ isPro, remainingScans }: Props) {
               <button
                 onClick={() => handleAdd(false)}
                 disabled={loading}
-                className="rounded-2xl bg-accent px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-accent-dark disabled:opacity-50"
+                className="btn-primary"
               >
                 Ajouter à ma collection
               </button>
@@ -365,7 +365,7 @@ export function ScanClient({ isPro, remainingScans }: Props) {
                 <button
                   onClick={() => handleAdd(true)}
                   disabled={loading}
-                  className="glass-card flex items-center justify-center gap-2 px-4 py-3 text-sm text-text-primary hover:bg-white/15 disabled:opacity-50"
+                  className="btn-secondary"
                 >
                   <RotateCcw size={14} /> Ajouter &amp; suivant
                 </button>
@@ -401,19 +401,19 @@ function Toggle({
       onClick={onClick}
       aria-pressed={active}
       className={cn(
-        "flex items-center gap-2 rounded-full border px-4 py-2 text-sm transition-colors",
+        "flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium shadow-inner transition-colors",
         active
-          ? "border-accent bg-accent/30 text-accent-light"
-          : "border-glass-border bg-glass text-text-muted hover:text-text-secondary",
+          ? "bg-accent/15 text-accent-dark ring-2 ring-accent/60"
+          : "bg-glass-inner text-text-muted hover:text-text-secondary",
       )}
     >
       <span
         className={cn(
           "flex h-4 w-4 items-center justify-center rounded border",
-          active ? "border-accent-light bg-accent-light" : "border-white/30",
+          active ? "border-accent bg-accent" : "border-black/20 bg-white",
         )}
       >
-        {active && <Check size={12} className="text-[#1e1b4b]" />}
+        {active && <Check size={12} className="text-white" />}
       </span>
       {label}
     </button>

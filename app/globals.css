@@ -2,26 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Thème par défaut : verre sombre (pages publiques, connexion). */
-:root {
-  --bg-gradient: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
-  --glass: rgba(255, 255, 255, 0.08);
-  --glass-strong: rgba(255, 255, 255, 0.14);
-  --glass-border: rgba(255, 255, 255, 0.15);
-  --glass-inner: rgba(255, 255, 255, 0.06);
-  --text-primary: #ffffff;
-  --text-secondary: rgba(255, 255, 255, 0.6);
-  --text-muted: rgba(255, 255, 255, 0.35);
-  --shadow-card: none;
-  --shadow-inner: none;
-}
-
 /*
- * Thème de l'application connectée, d'après la maquette du fondateur : fond
- * qui descend du lavande clair au bleu profond, cartes blanches givrées avec
- * une ombre douce, texte encre.
+ * Direction artistique unique, d'après la maquette du fondateur : fond qui
+ * descend du lavande clair au bleu profond, cartes blanches givrées avec une
+ * ombre douce, texte encre, boutons en pastille bleue.
  */
-.theme-app {
+:root {
   --bg-gradient: linear-gradient(180deg, #eceef8 0%, #d3d7f2 22%, #7d86dc 58%, #3a3fa6 100%);
   --glass: rgba(255, 255, 255, 0.58);
   --glass-strong: rgba(255, 255, 255, 0.74);
@@ -32,9 +18,6 @@
   --text-muted: rgba(27, 31, 59, 0.42);
   --shadow-card: 0 14px 36px rgba(28, 33, 96, 0.14);
   --shadow-inner: 0 6px 18px rgba(28, 33, 96, 0.1);
-  background: var(--bg-gradient);
-  background-attachment: fixed;
-  color: var(--text-primary);
 }
 
 body {
@@ -44,9 +27,15 @@ body {
   min-height: 100vh;
 }
 
+/* Les pages longues (accueil public, tarifs) ne doivent pas finir sur un
+   fond uniformément sombre : le dégradé s'étire sur la hauteur du document. */
+html {
+  background: #3a3fa6;
+}
+
 @layer components {
   .glass-card {
-    @apply bg-glass backdrop-blur-glass border border-glass-border rounded-2xl shadow-card;
+    @apply bg-glass backdrop-blur-glass border border-glass-border rounded-[22px] shadow-card;
   }
 
   .glass-card-strong {
@@ -56,5 +45,33 @@ body {
   /* Carte blanche posée à l'intérieur d'une carte givrée (statistiques, listes). */
   .glass-inner {
     @apply bg-glass-inner rounded-[22px] shadow-inner;
+  }
+
+  /* Action principale : la pastille bleue du bouton de scan. */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-accent px-5 py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(79,95,230,0.35)] transition hover:brightness-110 disabled:opacity-50 disabled:hover:brightness-100;
+  }
+
+  /* Action secondaire : pastille blanche. */
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-glass-inner px-5 py-3 text-sm font-semibold text-text-primary shadow-inner transition hover:bg-white disabled:opacity-50;
+  }
+
+  /* Champ de saisie. */
+  .field {
+    @apply bg-glass-inner rounded-2xl border border-black/5 px-4 py-3 text-sm text-text-primary shadow-inner outline-none placeholder:text-text-muted focus:ring-2 focus:ring-accent/30;
+  }
+
+  /* Groupe de pastilles (tris, bascules). */
+  .pill-group {
+    @apply flex items-center gap-1 rounded-full bg-glass-inner p-1 shadow-inner;
+  }
+
+  .pill {
+    @apply rounded-full px-3 py-1.5 text-xs font-medium text-text-muted transition-colors hover:text-text-secondary;
+  }
+
+  .pill-active {
+    @apply bg-accent/15 text-accent-dark;
   }
 }

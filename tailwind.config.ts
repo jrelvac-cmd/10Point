@@ -34,13 +34,13 @@ const config: Config = {
           muted: "var(--text-muted)",
         },
         accent: {
-          DEFAULT: "#6366F1",
+          DEFAULT: "#4F5FE6",
           light: "#A5B4FC",
           dark: "#4338CA",
         },
-        up: "#34D399",
-        down: "#FB923C",
-        warn: "#FBBF24",
+        up: "#2f8f5b",
+        down: "#c2453a",
+        warn: "#b7791f",
         gauge: {
           up: "#5561B9",
           stable: "#F1F2F9",

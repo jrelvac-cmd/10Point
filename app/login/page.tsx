@@ -199,7 +199,7 @@ export default function LoginPage() {
     return (
       <main className="flex-1 flex flex-col items-center justify-center px-6 py-12">
         <div className="glass-card-strong flex w-full max-w-sm flex-col gap-3 px-6 py-8 text-center">
-          <h1 className="text-xl font-semibold text-text-primary">Vérifie ta boîte mail</h1>
+          <h1 className="text-2xl font-bold text-text-primary">Vérifie ta boîte mail</h1>
           <p className="text-sm text-text-secondary">
             Un lien de confirmation a été envoyé à{" "}
             <span className="text-text-primary">{email}</span>. Clique dessus pour activer
@@ -215,7 +215,7 @@ export default function LoginPage() {
           <button
             onClick={resendConfirmation}
             disabled={loading}
-            className="glass-card px-4 py-3 text-sm text-text-primary hover:bg-white/15 disabled:opacity-50"
+            className="btn-secondary"
           >
             Renvoyer le lien
           </button>
@@ -236,19 +236,19 @@ export default function LoginPage() {
   return (
     <main className="flex-1 flex flex-col items-center justify-center px-6 py-12">
       <div className="glass-card-strong flex w-full max-w-sm flex-col gap-4 px-6 py-8">
-        <h1 className="text-center text-xl font-semibold text-text-primary">{APP_NAME}</h1>
+        <h1 className="text-center text-2xl font-extrabold tracking-tight text-text-primary">{APP_NAME}</h1>
 
         <button
           onClick={handleGoogle}
-          className="glass-card px-4 py-3 text-sm font-medium text-text-primary hover:bg-white/15 transition-colors"
+          className="btn-secondary"
         >
           Continuer avec Google
         </button>
 
         <div className="flex items-center gap-3 text-xs text-text-muted">
-          <div className="h-px flex-1 bg-white/10" />
+          <div className="h-px flex-1 bg-black/10" />
           ou
-          <div className="h-px flex-1 bg-white/10" />
+          <div className="h-px flex-1 bg-black/10" />
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
@@ -263,7 +263,7 @@ export default function LoginPage() {
               maxLength={24}
               pattern="[a-z0-9_]+"
               title="3 à 24 caractères : minuscules, chiffres et underscore"
-              className="glass-card bg-transparent px-4 py-3 text-sm text-text-primary placeholder:text-text-muted outline-none"
+              className="field"
             />
           )}
           <input
@@ -272,7 +272,7 @@ export default function LoginPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="glass-card bg-transparent px-4 py-3 text-sm text-text-primary placeholder:text-text-muted outline-none"
+            className="field"
           />
           <input
             type="password"
@@ -281,13 +281,13 @@ export default function LoginPage() {
             onChange={(e) => setPassword(e.target.value)}
             required
             minLength={6}
-            className="glass-card bg-transparent px-4 py-3 text-sm text-text-primary placeholder:text-text-muted outline-none"
+            className="field"
           />
 
           {notice && <p className="text-sm text-up">{notice}</p>}
 
           {error && (
-            <div className="flex flex-col gap-2 rounded-xl border-l-2 border-l-down bg-white/5 px-3 py-2">
+            <div className="flex flex-col gap-2 rounded-xl border-l-2 border-l-down bg-black/5 px-3 py-2">
               <p className="text-sm text-text-primary">{error}</p>
 
               {errorKind === "not_confirmed" && (
@@ -295,7 +295,7 @@ export default function LoginPage() {
                   type="button"
                   onClick={resendConfirmation}
                   disabled={loading}
-                  className="self-start text-xs text-accent-light hover:underline disabled:opacity-50"
+                  className="self-start text-xs text-accent-dark hover:underline disabled:opacity-50"
                 >
                   Renvoyer le lien de confirmation
                 </button>
@@ -305,7 +305,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => switchMode("signup")}
-                  className="self-start text-xs text-accent-light hover:underline"
+                  className="self-start text-xs text-accent-dark hover:underline"
                 >
                   Créer un compte avec cet email
                 </button>
@@ -315,7 +315,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => switchMode("signin")}
-                  className="self-start text-xs text-accent-light hover:underline"
+                  className="self-start text-xs text-accent-dark hover:underline"
                 >
                   Aller à la connexion
                 </button>
@@ -326,7 +326,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="rounded-2xl bg-accent px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-accent-dark disabled:opacity-50"
+            className="btn-primary"
           >
             {loading
               ? "Un instant…"
@@ -340,7 +340,7 @@ export default function LoginPage() {
           <button
             onClick={handleDemo}
             disabled={loading}
-            className="rounded-2xl border border-dashed border-warn/50 px-4 py-3 text-sm text-warn transition-colors hover:bg-warn/10 disabled:opacity-50"
+            className="rounded-full border border-dashed border-warn/60 px-4 py-3 text-sm font-medium text-warn transition-colors hover:bg-warn/10 disabled:opacity-50"
           >
             Entrer en mode démo (sans compte)
           </button>

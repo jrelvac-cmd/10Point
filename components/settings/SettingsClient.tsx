@@ -59,7 +59,7 @@ export function SettingsClient({
   return (
     <>
       <section className="glass-card flex flex-col gap-4 px-5 py-5">
-        <h2 className="text-sm font-medium text-text-primary">Partage</h2>
+        <h2 className="text-sm font-bold text-text-primary">Partage</h2>
 
         <Toggle
           label="Rendre ma collection publique"
@@ -70,8 +70,8 @@ export function SettingsClient({
         />
 
         {share && (
-          <div className="flex items-center gap-2 rounded-xl border border-glass-border bg-black/20 px-3 py-2">
-            <span className="min-w-0 flex-1 truncate font-mono text-[11px] text-text-secondary">
+          <div className="glass-inner flex items-center gap-2 px-3 py-2">
+            <span className="min-w-0 flex-1 truncate font-semibold text-[11px] text-text-secondary">
               {publicUrl}
             </span>
             <button
@@ -90,7 +90,7 @@ export function SettingsClient({
       </section>
 
       <section className="glass-card flex flex-col gap-4 px-5 py-5">
-        <h2 className="text-sm font-medium text-text-primary">Alertes de prix</h2>
+        <h2 className="text-sm font-bold text-text-primary">Alertes de prix</h2>
         <Toggle
           label="M'avertir quand une carte prend de la valeur"
           hint={
@@ -105,7 +105,7 @@ export function SettingsClient({
       </section>
 
       <section className="glass-card flex flex-col gap-3 px-5 py-5">
-        <h2 className="text-sm font-medium text-text-primary">Supprimer mon compte</h2>
+        <h2 className="text-sm font-bold text-text-primary">Supprimer mon compte</h2>
         <p className="text-xs text-text-secondary">
           Ta demande nous est envoyée par email et ton compte ainsi que toutes tes
           données sont supprimés manuellement sous quelques jours.
@@ -120,13 +120,13 @@ export function SettingsClient({
             <button
               onClick={requestDeletion}
               disabled={busy}
-              className="rounded-2xl bg-down px-4 py-2.5 text-sm font-medium text-[#1e1b4b] disabled:opacity-50"
+              className="rounded-full bg-down px-4 py-2.5 text-sm font-semibold text-white shadow-inner disabled:opacity-50"
             >
               Confirmer la demande
             </button>
             <button
               onClick={() => setDeleteState("idle")}
-              className="rounded-2xl border border-glass-border px-4 py-2.5 text-sm text-text-secondary"
+              className="btn-secondary py-2.5"
             >
               Annuler
             </button>
@@ -183,7 +183,7 @@ function Toggle({
         disabled={disabled}
         className={cn(
           "mt-0.5 h-6 w-11 shrink-0 rounded-full border transition-colors",
-          checked ? "border-accent bg-accent/60" : "border-glass-border bg-white/10",
+          checked ? "border-accent bg-accent" : "border-black/10 bg-black/10",
           disabled && "cursor-not-allowed",
         )}
       >

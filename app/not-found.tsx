@@ -2,19 +2,21 @@ import Link from "next/link";
 
 export default function NotFound() {
   return (
-    <main className="flex-1 flex flex-col items-center justify-center gap-4 px-6 text-center">
-      <p className="font-mono text-6xl text-accent-light">404</p>
-      <h1 className="text-xl font-semibold text-text-primary">Cette page n&apos;existe pas</h1>
+    <main className="flex-1 flex flex-col items-center justify-center px-6 py-12">
+      <div className="glass-card-strong flex w-full max-w-sm flex-col items-center gap-4 px-6 py-8 text-center">
+      <p className="text-6xl font-extrabold tracking-tight text-accent-dark">404</p>
+      <h1 className="text-2xl font-bold text-text-primary">Cette page n&apos;existe pas</h1>
       <p className="max-w-sm text-sm text-text-secondary">
         Le lien est peut-être erroné, ou la collection que tu cherches n&apos;est pas
         partagée publiquement.
       </p>
       <Link
         href="/"
-        className="mt-2 rounded-2xl bg-accent px-5 py-3 text-sm font-medium text-white hover:bg-accent-dark"
+        className="mt-2 btn-primary"
       >
         Retour à l&apos;accueil
       </Link>
+      </div>
     </main>
   );
 }

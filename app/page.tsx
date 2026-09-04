@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import {
   ScanLine,
   Coins,
@@ -101,19 +102,20 @@ export default function LandingPage() {
   return (
     <main className="flex-1">
       <header className="mx-auto flex w-full max-w-5xl items-center justify-between px-6 py-6">
-        <span className="text-lg font-bold tracking-wide text-accent">
-          {APP_NAME.toUpperCase()}
-        </span>
+        <Link href="/" className="flex items-center gap-2">
+          <Image src="/icons/icon.svg" alt="" width={36} height={36} className="h-9 w-9 rounded-xl shadow-inner" priority />
+          <span className="text-base font-extrabold tracking-tight text-text-primary">{APP_NAME}</span>
+        </Link>
         <Link
           href="/login"
-          className="text-sm text-text-secondary hover:text-text-primary"
+          className="btn-secondary px-4 py-2"
         >
           Se connecter
         </Link>
       </header>
 
       <section className="mx-auto flex w-full max-w-3xl flex-col items-center gap-5 px-6 py-16 text-center">
-        <h1 className="text-4xl font-bold leading-tight text-text-primary sm:text-5xl">
+        <h1 className="text-4xl font-extrabold leading-tight tracking-tight text-text-primary sm:text-5xl">
           Ta collection Pokémon vaut peut-être plus que tu ne crois.
         </h1>
         <p className="max-w-xl text-text-secondary">
@@ -122,7 +124,7 @@ export default function LandingPage() {
         </p>
         <Link
           href="/login"
-          className="rounded-2xl bg-accent px-7 py-4 font-medium text-white transition-colors hover:bg-accent-dark"
+          className="btn-primary px-7 py-4 text-base"
         >
           Scanner ma collection — gratuit
         </Link>
@@ -133,8 +135,10 @@ export default function LandingPage() {
 
       <section className="mx-auto grid w-full max-w-5xl gap-4 px-6 pb-16 sm:grid-cols-2">
         {FEATURES.map(({ icon: Icon, title, text }) => (
-          <div key={title} className="glass-card flex flex-col gap-2 px-5 py-6">
-            <Icon size={22} className="text-accent-light" />
+          <div key={title} className="glass-card flex flex-col gap-3 px-5 py-6">
+            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-accent/15 text-accent-dark">
+              <Icon size={20} />
+            </span>
             <h2 className="text-sm font-semibold text-text-primary">{title}</h2>
             <p className="text-sm text-text-secondary">{text}</p>
           </div>
@@ -145,14 +149,14 @@ export default function LandingPage() {
         <p className="glass-card-strong px-6 py-8 text-lg text-text-primary">
           La plupart des applications te donnent un prix approximatif, souvent en
           dollars.{" "}
-          <span className="text-accent-light">
+          <span className="font-semibold text-accent-dark">
             TenPoint te donne la cote européenne, celle qui compte quand tu vends.
           </span>
         </p>
       </section>
 
       <section className="mx-auto w-full max-w-4xl px-6 pb-16">
-        <h2 className="mb-5 text-center text-xl font-semibold text-text-primary">
+        <h2 className="mb-5 text-center text-2xl font-extrabold tracking-tight text-white drop-shadow-[0_2px_8px_rgba(28,33,96,0.35)]">
           Des tarifs simples
         </h2>
         <div className="grid gap-4 sm:grid-cols-3">
@@ -162,14 +166,14 @@ export default function LandingPage() {
               className={cn(
                 "flex flex-col gap-3 px-5 py-6",
                 plan.highlight
-                  ? "glass-card-strong ring-1 ring-accent/50"
+                  ? "glass-card-strong ring-2 ring-accent/60"
                   : "glass-card",
               )}
             >
               <span className="text-sm font-medium text-text-secondary">
                 {plan.name}
               </span>
-              <p className="font-mono text-2xl text-text-primary">
+              <p className="text-2xl font-extrabold text-text-primary">
                 {plan.price}
                 <span className="text-sm text-text-muted">{plan.period}</span>
               </p>
@@ -194,7 +198,7 @@ export default function LandingPage() {
             </div>
           ))}
         </div>
-        <p className="mt-4 text-center text-xs text-text-muted">
+        <p className="glass-card mt-4 px-4 py-3 text-center text-xs text-text-secondary">
           Une formule annuelle à 24,99 € existe aussi.{" "}
           <Link href="/pricing" className="underline">
             Voir le détail des offres
@@ -203,7 +207,7 @@ export default function LandingPage() {
       </section>
 
       <section className="mx-auto w-full max-w-3xl px-6 pb-16">
-        <h2 className="mb-5 text-center text-xl font-semibold text-text-primary">
+        <h2 className="mb-5 text-center text-2xl font-extrabold tracking-tight text-white drop-shadow-[0_2px_8px_rgba(28,33,96,0.35)]">
           Questions fréquentes
         </h2>
         <div className="flex flex-col gap-2">
@@ -218,10 +222,10 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <footer className="mx-auto flex w-full max-w-5xl flex-col items-center gap-3 border-t border-white/10 px-6 py-8 text-center">
+      <footer className="glass-card mx-auto mb-10 flex w-full max-w-5xl flex-col items-center gap-3 px-6 py-8 text-center">
         <Link
           href="/login"
-          className="rounded-2xl bg-accent px-6 py-3 text-sm font-medium text-white hover:bg-accent-dark"
+          className="btn-primary"
         >
           Commencer gratuitement
         </Link>

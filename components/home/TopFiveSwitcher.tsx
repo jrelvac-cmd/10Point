@@ -101,8 +101,8 @@ export function TopFiveSwitcher({
                       card.variationPct === null
                         ? "text-text-muted"
                         : card.variationPct >= 0
-                          ? "text-[#2f8f5b]"
-                          : "text-[#c2453a]",
+                          ? "text-up"
+                          : "text-down",
                     )}
                   >
                     {formatPct(card.variationPct)}
@@ -146,7 +146,7 @@ function ToggleIcon({
       title={label}
       className={cn(
         "flex h-6 w-6 items-center justify-center rounded-full transition-colors",
-        active ? "bg-[#2fa06a] text-white" : "text-text-muted hover:text-text-secondary",
+        active ? "bg-up text-white" : "text-text-muted hover:text-text-secondary",
       )}
     >
       {children}

@@ -68,7 +68,7 @@ export default function HashSession({ next }: { next: string }) {
           </p>
           <a
             href="/login"
-            className="rounded-2xl bg-accent px-4 py-3 text-sm font-medium text-white hover:bg-accent-dark"
+            className="btn-primary"
           >
             Retour à la connexion
           </a>

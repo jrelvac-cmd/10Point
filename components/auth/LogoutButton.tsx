@@ -16,7 +16,7 @@ export function LogoutButton() {
   return (
     <button
       onClick={handleLogout}
-      className="glass-card px-4 py-3 text-sm text-down hover:bg-white/10 transition-colors"
+      className="btn-secondary text-down"
     >
       Se déconnecter
     </button>

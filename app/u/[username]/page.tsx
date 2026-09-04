@@ -52,10 +52,8 @@ export default async function PublicCollectionPage({
     <main className="flex-1 px-6 py-10">
       <div className="mx-auto flex w-full max-w-2xl flex-col gap-5">
         <header className="flex flex-col gap-1">
-          <span className="text-lg font-bold tracking-wide text-accent">
-            {APP_NAME.toUpperCase()}
-          </span>
-          <h1 className="text-xl font-semibold text-text-primary">
+          <span className="text-base font-extrabold tracking-tight text-accent-dark">{APP_NAME}</span>
+          <h1 className="text-2xl font-extrabold tracking-tight text-text-primary">
             Collection de {profile.username}
           </h1>
         </header>
@@ -64,7 +62,7 @@ export default async function PublicCollectionPage({
           <span className="text-[11px] uppercase tracking-wide text-text-secondary">
             Valeur totale
           </span>
-          <span className="font-mono text-3xl text-text-primary">{formatEur(total)}</span>
+          <span className="text-[32px] font-extrabold tracking-tight text-text-primary">{formatEur(total)}</span>
           <span className="text-xs text-text-muted">
             {cardCount} carte{cardCount > 1 ? "s" : ""}
           </span>
@@ -97,11 +95,11 @@ export default async function PublicCollectionPage({
                   </p>
                 </div>
                 <div className="flex flex-col items-end">
-                  <span className="font-mono text-sm text-text-primary">
+                  <span className="font-semibold text-sm text-text-primary">
                     {formatEur(entry.lineValue)}
                   </span>
                   {entry.quantity > 1 && (
-                    <span className="font-mono text-[11px] text-text-muted">
+                    <span className="font-semibold text-[11px] text-text-muted">
                       ×{entry.quantity}
                     </span>
                   )}
@@ -113,7 +111,7 @@ export default async function PublicCollectionPage({
 
         <Link
           href="/"
-          className="glass-card px-4 py-3 text-center text-sm text-text-primary hover:bg-white/10"
+          className="btn-primary"
         >
           Découvrir ce que vaut ta propre collection
         </Link>
