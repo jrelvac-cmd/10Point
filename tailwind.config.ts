@@ -42,9 +42,9 @@ const config: Config = {
         down: "#c2453a",
         warn: "#b7791f",
         gauge: {
-          up: "#5561B9",
-          stable: "#F1F2F9",
-          down: "#F2A0A0",
+          up: "#5A66AC",
+          stable: "#FBFAF7",
+          down: "#E2908A",
         },
       },
       fontFamily: {
