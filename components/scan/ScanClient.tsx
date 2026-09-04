@@ -3,10 +3,11 @@
 import { useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Camera, Upload, Loader2, Check, ExternalLink, RotateCcw } from "lucide-react";
+import { Loader2, Check, ExternalLink, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatEur } from "@/lib/pricing";
 import { BULK_SESSION_MAX } from "@/lib/plans";
+import { Viewfinder } from "./Viewfinder";
 
 type PriceSet = {
   trend: number | null;
@@ -50,6 +51,7 @@ export function ScanClient({ isPro, remainingScans }: Props) {
   const [bulkMode, setBulkMode] = useState(false);
   const [bulkCount, setBulkCount] = useState(0);
   const [bulkValue, setBulkValue] = useState(0);
+  const [bulkBlocked, setBulkBlocked] = useState(false);
 
   function reset() {
     setCandidates(null);
@@ -118,12 +120,9 @@ export function ScanClient({ isPro, remainingScans }: Props) {
       setBulkCount((c) => c + 1);
       setBulkValue((v) => v + unit * quantity);
 
-      if (thenNext) {
-        reset();
-        cameraRef.current?.click();
-      } else {
-        setAdded(true);
-      }
+      // La visée réapparaît d'elle-même une fois le résultat effacé.
+      if (thenNext) reset();
+      else setAdded(true);
     } catch {
       setError("Connexion impossible.");
     } finally {
@@ -133,6 +132,29 @@ export function ScanClient({ isPro, remainingScans }: Props) {
 
   const price = selected ? (isReverse ? selected.prices.reverse : selected.prices.normal) : null;
   const bulkFull = bulkMode && bulkCount >= BULK_SESSION_MAX;
+
+  function toggleBurst() {
+    if (!isPro) {
+      setBulkBlocked(true);
+      return;
+    }
+    setBulkMode(!bulkMode);
+    setBulkCount(0);
+    setBulkValue(0);
+  }
+
+  const burstNotice = bulkBlocked ? (
+    <>
+      Scanner plusieurs cartes d&apos;affilée est réservé au Pro.{" "}
+      <Link href="/pricing" className="underline">
+        Voir les offres
+      </Link>
+    </>
+  ) : bulkFull ? (
+    `Session complète · ${BULK_SESSION_MAX} cartes`
+  ) : bulkMode ? (
+    `Rafale · ${bulkCount}/${BULK_SESSION_MAX} · ${formatEur(bulkValue)}`
+  ) : null;
 
   return (
     <div className="flex flex-col gap-4 py-4">
@@ -161,47 +183,15 @@ export function ScanClient({ isPro, remainingScans }: Props) {
         )}
       </div>
 
-      {isPro && (
-        <button
-          onClick={() => {
-            setBulkMode(!bulkMode);
-            setBulkCount(0);
-            setBulkValue(0);
-          }}
-          className={cn(
-            "glass-card px-4 py-3 text-left text-sm font-medium transition-colors",
-            bulkMode ? "text-accent-dark ring-2 ring-accent/60" : "text-text-secondary",
-          )}
-        >
-          {bulkMode
-            ? `Session rafale active — ${bulkCount}/${BULK_SESSION_MAX} cartes · ${formatEur(bulkValue)}`
-            : "Activer le mode rafale (Pro)"}
-        </button>
-      )}
-
-      {bulkFull && (
-        <p className="glass-card px-4 py-3 text-sm text-warn">
-          Session complète ({BULK_SESSION_MAX} cartes). Termine-la pour en démarrer une nouvelle.
-        </p>
-      )}
-
       {!candidates && !loading && (
-        <div className="grid gap-3 sm:grid-cols-2">
-          <button
-            onClick={() => cameraRef.current?.click()}
-            className="glass-card flex flex-col items-center gap-2 px-6 py-10 text-text-primary transition-colors hover:bg-black/5"
-          >
-            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-accent text-white shadow-[0_10px_24px_rgba(79,95,230,0.35)]"><Camera size={26} /></span>
-            <span className="text-sm font-medium">Prendre une photo</span>
-          </button>
-          <button
-            onClick={() => fileRef.current?.click()}
-            className="glass-card flex flex-col items-center gap-2 px-6 py-10 text-text-primary transition-colors hover:bg-black/5"
-          >
-            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-accent/15 text-accent-dark"><Upload size={26} /></span>
-            <span className="text-sm font-medium">Choisir un fichier</span>
-          </button>
-        </div>
+        <Viewfinder
+          burstActive={bulkMode}
+          notice={burstNotice}
+          onCapture={handleFile}
+          onImport={() => fileRef.current?.click()}
+          onNativeCamera={() => cameraRef.current?.click()}
+          onToggleBurst={toggleBurst}
+        />
       )}
 
       {loading && (
