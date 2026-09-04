@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { APP_NAME, APP_URL } from "@/lib/constants";
@@ -20,6 +20,22 @@ export default function LoginPage() {
   const [notice, setNotice] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [checkEmail, setCheckEmail] = useState(false);
+
+  // Message renvoyé par la page de retour d'authentification. Lu depuis
+  // l'adresse plutôt qu'avec useSearchParams pour garder cette page en rendu
+  // statique.
+  useEffect(() => {
+    const reason = new URLSearchParams(window.location.search).get("error");
+    if (reason === "lien_expire") {
+      setError(
+        "Ce lien de confirmation a expiré ou a déjà été utilisé. Connecte-toi ci-dessous, ou renvoie-toi un lien.",
+      );
+      setErrorKind("not_confirmed");
+    } else if (reason === "auth") {
+      setError("La connexion n'a pas abouti. Réessaie.");
+      setErrorKind("generic");
+    }
+  }, []);
 
   function switchMode(next: Mode) {
     setMode(next);
@@ -106,6 +122,46 @@ export default function LoginPage() {
           emailRedirectTo: `${APP_URL}/auth/callback`,
         },
       });
+
+      // Supabase signale un compte existant de deux façons : par une erreur
+      // explicite, ou — quand la protection contre l'énumération des emails est
+      // active — par une réponse d'apparence normale mais sans identité liée.
+      const alreadyExists =
+        error?.code === "user_already_exists" ||
+        error?.code === "email_exists" ||
+        (!error && data.user !== null && (data.user.identities?.length ?? 0) === 0);
+
+      if (alreadyExists) {
+        // Le compte existe : plutôt que d'imposer un aller-retour vers l'écran
+        // de connexion, on tente directement d'ouvrir la session avec le mot de
+        // passe saisi. La bascule reste sûre : sans le bon mot de passe, rien ne
+        // s'ouvre.
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        setLoading(false);
+
+        if (!signInError) {
+          router.push("/home");
+          router.refresh();
+          return;
+        }
+
+        if (signInError.code === "email_not_confirmed") {
+          const friendly = translateAuthError(signInError.code, signInError.message);
+          setError(friendly.message);
+          setErrorKind(friendly.kind);
+          return;
+        }
+
+        setError(
+          "Un compte existe déjà avec cet email, mais ce mot de passe ne correspond pas. Connecte-toi avec ton mot de passe habituel.",
+        );
+        setErrorKind("already_exists");
+        return;
+      }
+
       setLoading(false);
 
       if (error) {
