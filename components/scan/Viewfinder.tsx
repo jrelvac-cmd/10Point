@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Camera, Layers, Loader2, Plus } from "lucide-react";
+import Image from "next/image";
+import { Camera, Layers, Loader2, Plus, ScanLine } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type CameraState = "starting" | "ready" | "refused" | "unavailable";
@@ -17,7 +18,7 @@ type Props = {
 };
 
 /**
- * Visée caméra dans la page.
+ * Visée caméra dans la page, sur toute la hauteur disponible.
  *
  * Un `input capture` laisse la main à l'appli photo du téléphone, sur laquelle
  * l'application ne peut rien afficher : il faut un flux vidéo pour poser
@@ -93,7 +94,7 @@ export function Viewfinder({
   }
 
   return (
-    <div className="relative aspect-[3/4] w-full overflow-hidden rounded-[28px] bg-[#101438] shadow-card">
+    <div className="relative min-h-0 w-full flex-1 overflow-hidden rounded-[28px] bg-gradient-to-b from-[#2a2f5e] to-[#0f1340] shadow-card">
       <video
         ref={videoRef}
         autoPlay
@@ -104,6 +105,15 @@ export function Viewfinder({
           "h-full w-full object-cover transition-opacity duration-300",
           state === "ready" ? "opacity-100" : "opacity-0",
         )}
+      />
+
+      <Image
+        src="/icons/icon.svg"
+        alt=""
+        width={44}
+        height={44}
+        className="pointer-events-none absolute left-1/2 top-5 h-11 w-11 -translate-x-1/2 drop-shadow-[0_4px_10px_rgba(0,0,0,0.35)]"
+        priority
       />
 
       {state === "starting" && (
@@ -138,22 +148,28 @@ export function Viewfinder({
 
       {state === "ready" && (
         <>
-          {/* Repère de cadrage au format d'une carte (63 × 88 mm). */}
-          <div className="pointer-events-none absolute inset-0 flex items-center justify-center pb-20">
-            <div className="aspect-[63/88] h-[68%] rounded-2xl border-2 border-white/70" />
+          {/* Repère de cadrage au format d'une carte (63 × 88 mm) : seulement
+              les coins, pour ne pas masquer la carte. */}
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center pb-24 pt-10">
+            <div className="relative aspect-[63/88] h-[64%]">
+              <Corner className="left-0 top-0 rounded-tl-2xl border-l-[5px] border-t-[5px]" />
+              <Corner className="right-0 top-0 rounded-tr-2xl border-r-[5px] border-t-[5px]" />
+              <Corner className="bottom-0 left-0 rounded-bl-2xl border-b-[5px] border-l-[5px]" />
+              <Corner className="bottom-0 right-0 rounded-br-2xl border-b-[5px] border-r-[5px]" />
+            </div>
           </div>
 
           {notice && (
-            <div className="pointer-events-none absolute inset-x-0 bottom-[108px] flex justify-center px-6">
+            <div className="pointer-events-none absolute inset-x-0 bottom-[112px] flex justify-center px-6">
               <span className="pointer-events-auto rounded-full bg-black/55 px-3 py-1.5 text-center text-[11px] font-medium text-white backdrop-blur">
                 {notice}
               </span>
             </div>
           )}
 
-          <div className="absolute inset-x-0 bottom-0 flex items-center justify-between px-7 pb-7">
+          <div className="absolute inset-x-0 bottom-0 flex items-center justify-between px-8 pb-7">
             <RoundButton label="Importer une photo" onClick={onImport}>
-              <Plus size={22} />
+              <Plus size={22} strokeWidth={2.5} />
             </RoundButton>
 
             <button
@@ -161,9 +177,9 @@ export function Viewfinder({
               onClick={shoot}
               disabled={shooting}
               aria-label="Prendre la photo"
-              className="flex h-[72px] w-[72px] items-center justify-center rounded-full border-[3px] border-white transition-transform active:scale-95 disabled:opacity-60"
+              className="flex h-16 w-16 items-center justify-center rounded-full bg-accent text-white shadow-[0_10px_28px_rgba(79,95,230,0.55)] transition-transform active:scale-95 disabled:opacity-60"
             >
-              <span className="h-[58px] w-[58px] rounded-full bg-white" />
+              <ScanLine size={26} />
             </button>
 
             <RoundButton
@@ -178,6 +194,10 @@ export function Viewfinder({
       )}
     </div>
   );
+}
+
+function Corner({ className }: { className: string }) {
+  return <span className={cn("absolute h-9 w-9 border-white", className)} />;
 }
 
 function RoundButton({
@@ -199,8 +219,8 @@ function RoundButton({
       title={label}
       aria-pressed={active}
       className={cn(
-        "flex h-11 w-11 items-center justify-center rounded-full backdrop-blur transition-colors",
-        active ? "bg-white text-accent-dark" : "bg-white/25 text-white hover:bg-white/40",
+        "flex h-12 w-12 items-center justify-center rounded-full shadow-inner transition-colors",
+        active ? "bg-accent text-white ring-2 ring-white/80" : "bg-white text-text-primary hover:bg-white/90",
       )}
     >
       {children}

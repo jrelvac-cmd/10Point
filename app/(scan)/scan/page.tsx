@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { ScanClient } from "@/components/scan/ScanClient";
-import { isPro, remainingScans, type Plan } from "@/lib/plans";
+import { isPro, scanQuotaFor, type Plan } from "@/lib/plans";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +21,8 @@ export default async function ScanPage() {
   return (
     <ScanClient
       isPro={isPro(plan)}
-      remainingScans={remainingScans(plan, profile?.scans_this_month ?? 0)}
+      quota={scanQuotaFor(plan)}
+      scansThisMonth={profile?.scans_this_month ?? 0}
     />
   );
 }

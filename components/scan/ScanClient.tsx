@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Loader2, Check, ExternalLink, RotateCcw } from "lucide-react";
+import { ArrowLeft, Loader2, Check, ExternalLink, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatEur } from "@/lib/pricing";
 import { BULK_SESSION_MAX } from "@/lib/plans";
@@ -31,10 +31,12 @@ type ScannedCard = {
 
 type Props = {
   isPro: boolean;
-  remainingScans: number | null;
+  /** Quota mensuel, null pour un plan sans limite. */
+  quota: number | null;
+  scansThisMonth: number;
 };
 
-export function ScanClient({ isPro, remainingScans }: Props) {
+export function ScanClient({ isPro, quota, scansThisMonth }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
 
@@ -46,7 +48,9 @@ export function ScanClient({ isPro, remainingScans }: Props) {
   const [isReverse, setIsReverse] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
-  const [scansLeft, setScansLeft] = useState(remainingScans);
+  const [scansLeft, setScansLeft] = useState<number | null>(
+    quota === null ? null : Math.max(0, quota - scansThisMonth),
+  );
 
   const [bulkMode, setBulkMode] = useState(false);
   const [bulkCount, setBulkCount] = useState(0);
@@ -86,6 +90,8 @@ export function ScanClient({ isPro, remainingScans }: Props) {
       setCandidates(json.cards);
       if (json.cards.length === 1) setSelected(json.cards[0]);
       setScansLeft(json.remaining_scans);
+      // Retour haptique à la reconnaissance ; absent sur iOS, d'où l'optionnel.
+      if (json.cards.length) navigator.vibrate?.(json.cards.length === 1 ? [30, 40, 70] : 30);
     } catch {
       setError("Connexion impossible. Vérifie ton réseau.");
     } finally {
@@ -156,8 +162,13 @@ export function ScanClient({ isPro, remainingScans }: Props) {
     `Rafale · ${bulkCount}/${BULK_SESSION_MAX} · ${formatEur(bulkValue)}`
   ) : null;
 
+  const counter =
+    quota === null
+      ? "Scans illimités"
+      : `${quota - (scansLeft ?? 0)}/${quota} scannée${quota - (scansLeft ?? 0) > 1 ? "s" : ""}`;
+
   return (
-    <div className="flex flex-col gap-4 py-4">
+    <div className="flex min-h-0 flex-1 flex-col gap-3">
       <input
         ref={fileRef}
         type="file"
@@ -174,15 +185,21 @@ export function ScanClient({ isPro, remainingScans }: Props) {
         onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
       />
 
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-text-primary">Scanner une carte</h1>
-        {scansLeft !== null && (
-          <span className="font-semibold text-xs text-text-secondary">
-            {scansLeft} scan{scansLeft > 1 ? "s" : ""} restant{scansLeft > 1 ? "s" : ""}
-          </span>
-        )}
-      </div>
+      <header className="flex items-start justify-between">
+        <div>
+          <h1 className="text-base font-bold leading-tight text-text-primary">Scanner une carte</h1>
+          <p className="text-[11px] text-text-secondary">{counter}</p>
+        </div>
+        <Link
+          href="/home"
+          aria-label="Retour à l'accueil"
+          className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-text-primary shadow-inner"
+        >
+          <ArrowLeft size={18} />
+        </Link>
+      </header>
 
+      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto">
       {!candidates && !loading && (
         <Viewfinder
           burstActive={bulkMode}
@@ -243,14 +260,18 @@ export function ScanClient({ isPro, remainingScans }: Props) {
       {selected && price && (
         <div className="glass-card-strong flex flex-col gap-4 p-4">
           <div className="flex gap-4">
-            <Image
-              src={selected.image_large ?? ""}
-              alt={selected.name}
-              width={245}
-              height={342}
-              className="w-28 shrink-0 rounded-lg"
-              unoptimized
-            />
+            {/* La clé relance l'animation à chaque nouvelle carte reconnue. */}
+            <div key={selected.id} className="card-reveal relative w-28 shrink-0 overflow-hidden rounded-lg">
+              <Image
+                src={selected.image_large ?? ""}
+                alt={selected.name}
+                width={245}
+                height={342}
+                className="w-full"
+                unoptimized
+              />
+              <span className="card-shine" aria-hidden />
+            </div>
             <div className="flex flex-col gap-1">
               <h2 className="text-lg font-bold text-text-primary">{selected.name}</h2>
               <p className="text-xs text-text-secondary">
@@ -260,7 +281,10 @@ export function ScanClient({ isPro, remainingScans }: Props) {
                 <p className="text-xs text-text-muted">{selected.rarity}</p>
               )}
 
-              <p className="mt-2 text-[28px] font-extrabold tracking-tight text-text-primary">
+              <p
+                key={`${selected.id}-${isReverse}`}
+                className="price-pop mt-2 text-[28px] font-extrabold tracking-tight text-text-primary"
+              >
                 {formatEur(price.trend)}
               </p>
               {price.variation_30d !== null && (
@@ -372,6 +396,7 @@ export function ScanClient({ isPro, remainingScans }: Props) {
           )}
         </div>
       )}
+      </div>
     </div>
   );
 }
