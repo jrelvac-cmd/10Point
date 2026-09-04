@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isCronAuthorized } from "@/lib/cron-auth";
 import { isPro, type Plan } from "@/lib/plans";
 import { formatEur } from "@/lib/pricing";
 import { APP_NAME, APP_URL } from "@/lib/constants";
@@ -37,9 +38,7 @@ type Owned = {
 };
 
 export async function GET(request: Request) {
-  const secret = process.env.CRON_SECRET;
-  const auth = request.headers.get("authorization");
-  if (secret && auth !== `Bearer ${secret}`) {
+  if (!isCronAuthorized(request)) {
     return NextResponse.json({ error: "UNAUTHORIZED" }, { status: 401 });
   }
 

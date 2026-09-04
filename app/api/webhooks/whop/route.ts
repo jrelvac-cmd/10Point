@@ -95,6 +95,25 @@ async function applyMembership(
     return false;
   }
 
+  // Un abonnement ne peut rétrograder un profil que s'il est celui qui lui
+  // donne accès. Sans cette règle, un tiers pourrait souscrire un essai en
+  // désignant un autre compte en métadonnée, puis le résilier pour faire
+  // tomber la victime en Free.
+  if (!membership.active) {
+    const { data: current } = await admin
+      .from("profiles")
+      .select("whop_membership_id")
+      .eq("id", profileId)
+      .maybeSingle();
+    const linked = current?.whop_membership_id ?? null;
+    if (linked && linked !== membership.membershipId) {
+      console.warn(
+        `[whop] ${membership.membershipId} inactif ignoré : le profil dépend de ${linked}`,
+      );
+      return false;
+    }
+  }
+
   const { error } = await admin
     .from("profiles")
     .update({

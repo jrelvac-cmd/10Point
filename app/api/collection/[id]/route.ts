@@ -27,7 +27,10 @@ export async function PATCH(
     .select("id, quantity")
     .maybeSingle();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    console.error(`[api] ${error.code ?? "?"} ${error.message}`);
+    return NextResponse.json({ error: "INTERNAL_ERROR" }, { status: 500 });
+  }
   if (!data) return NextResponse.json({ error: "NOT_FOUND" }, { status: 404 });
   return NextResponse.json(data);
 }
@@ -52,7 +55,10 @@ export async function DELETE(
     .eq("user_id", user.id)
     .select("id");
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    console.error(`[api] ${error.code ?? "?"} ${error.message}`);
+    return NextResponse.json({ error: "INTERNAL_ERROR" }, { status: 500 });
+  }
   if (!data?.length) return NextResponse.json({ error: "NOT_FOUND" }, { status: 404 });
   return new NextResponse(null, { status: 204 });
 }

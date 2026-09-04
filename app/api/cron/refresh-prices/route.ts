@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isCronAuthorized } from "@/lib/cron-auth";
 import { getCardById } from "@/lib/tcgdex";
 import { cacheCardAndPrices } from "@/lib/cards";
 
@@ -18,11 +19,7 @@ const FREE_HOURS = 48;
 const MAX_CARDS_PER_RUN = 120;
 
 export async function GET(request: Request) {
-  // Vercel signe ses appels de cron ; en dehors, un secret partagé empêche
-  // n'importe qui de déclencher la tâche en boucle.
-  const secret = process.env.CRON_SECRET;
-  const auth = request.headers.get("authorization");
-  if (secret && auth !== `Bearer ${secret}`) {
+  if (!isCronAuthorized(request)) {
     return NextResponse.json({ error: "UNAUTHORIZED" }, { status: 401 });
   }
 

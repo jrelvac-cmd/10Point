@@ -36,7 +36,10 @@ export async function PATCH(request: Request) {
   }
 
   const { error } = await supabase.from("profiles").update(patch).eq("id", user.id);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    console.error(`[api] ${error.code ?? "?"} ${error.message}`);
+    return NextResponse.json({ error: "INTERNAL_ERROR" }, { status: 500 });
+  }
 
   return NextResponse.json({ ok: true });
 }

@@ -51,7 +51,10 @@ export async function POST(request: Request) {
       .from("collection_items")
       .update({ quantity: newQuantity })
       .eq("id", existing.id);
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) {
+    console.error(`[api] ${error.code ?? "?"} ${error.message}`);
+    return NextResponse.json({ error: "INTERNAL_ERROR" }, { status: 500 });
+  }
     return NextResponse.json({ id: existing.id, quantity: newQuantity });
   }
 
@@ -83,6 +86,9 @@ export async function POST(request: Request) {
     .select("id, quantity")
     .single();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    console.error(`[api] ${error.code ?? "?"} ${error.message}`);
+    return NextResponse.json({ error: "INTERNAL_ERROR" }, { status: 500 });
+  }
   return NextResponse.json(data, { status: 201 });
 }

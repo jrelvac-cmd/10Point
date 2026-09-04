@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -9,9 +10,12 @@ import { createAdminClient } from "@/lib/supabase/admin";
  * d'environnement Vercel : le bypass ne peut donc pas se retrouver actif en
  * production par oubli. Le compte démo est un utilisateur Supabase normal,
  * soumis aux mêmes politiques RLS que les autres.
+ *
+ * Le mot de passe est tiré au sort à chaque appel et n'existe nulle part dans
+ * le code : le dépôt étant public, un mot de passe fixe aurait permis à
+ * n'importe qui de se connecter au compte démo sur la base de production.
  */
 const DEMO_EMAIL = "demo@tenpoint.app";
-const DEMO_PASSWORD = "demo-tenpoint-local-only";
 const DEMO_USERNAME = "demo";
 
 export async function POST() {
@@ -20,10 +24,11 @@ export async function POST() {
   }
 
   const admin = createAdminClient();
+  const password = randomBytes(24).toString("base64url");
 
   const { data: created, error } = await admin.auth.admin.createUser({
     email: DEMO_EMAIL,
-    password: DEMO_PASSWORD,
+    password,
     email_confirm: true,
     user_metadata: { username: DEMO_USERNAME },
   });
@@ -31,7 +36,7 @@ export async function POST() {
   let userId = created?.user?.id;
 
   // Déjà créé lors d'un passage précédent : on récupère l'identifiant et on
-  // réaligne le mot de passe pour que la connexion aboutisse à coup sûr.
+  // remplace le mot de passe par celui tiré à l'instant.
   if (error) {
     const { data: list } = await admin.auth.admin.listUsers();
     const existing = list?.users.find((u) => u.email === DEMO_EMAIL);
@@ -39,7 +44,7 @@ export async function POST() {
       return NextResponse.json({ error: "DEMO_SETUP_FAILED" }, { status: 500 });
     }
     userId = existing.id;
-    await admin.auth.admin.updateUserById(userId, { password: DEMO_PASSWORD });
+    await admin.auth.admin.updateUserById(userId, { password });
   }
 
   // Le pseudo est déjà choisi : on évite la redirection vers /choisir-pseudo.
@@ -50,5 +55,5 @@ export async function POST() {
       .eq("id", userId);
   }
 
-  return NextResponse.json({ email: DEMO_EMAIL, password: DEMO_PASSWORD });
+  return NextResponse.json({ email: DEMO_EMAIL, password });
 }
