@@ -118,3 +118,96 @@ html {
     display: none;
   }
 }
+
+/* ---- Page publique : apparitions, cartes flottantes, bandeau défilant ---- */
+
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.reveal-shown {
+  opacity: 1;
+  transform: none;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(var(--tilt, 0deg)); }
+  50% { transform: translateY(-14px) rotate(var(--tilt, 0deg)); }
+}
+@keyframes holo-sweep {
+  0% { transform: translateX(-70%); }
+  100% { transform: translateX(70%); }
+}
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 10px 24px rgba(79, 95, 230, 0.35); }
+  50% { box-shadow: 0 14px 40px rgba(79, 95, 230, 0.65); }
+}
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(30px) scale(0.96); }
+  to { opacity: 1; transform: none; }
+}
+
+/* La largeur vient de la classe utilitaire posée à l'usage. */
+.holo-card {
+  position: relative;
+  aspect-ratio: 63 / 88;
+  overflow: hidden;
+  border-radius: 14px;
+  background: linear-gradient(160deg, hsl(var(--hue) 70% 55%), hsl(calc(var(--hue) + 40) 70% 32%));
+  box-shadow: 0 22px 44px rgba(20, 25, 90, 0.4);
+  animation: float 6s ease-in-out infinite;
+  transform: rotate(var(--tilt, 0deg));
+}
+.holo-art {
+  position: absolute;
+  inset: 9% 9% 40%;
+  border-radius: 10px;
+  background:
+    radial-gradient(circle at 30% 28%, rgba(255, 255, 255, 0.6), transparent 52%),
+    linear-gradient(135deg, hsl(calc(var(--hue) + 30) 85% 72%), hsl(calc(var(--hue) - 30) 80% 42%));
+}
+.holo-shine {
+  position: absolute;
+  inset: -40%;
+  background: linear-gradient(115deg, transparent 42%, rgba(255, 255, 255, 0.6) 50%, transparent 58%);
+  mix-blend-mode: screen;
+  animation: holo-sweep 4.5s ease-in-out infinite alternate;
+}
+.holo-body {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+}
+
+.marquee {
+  overflow: hidden;
+  mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
+}
+.marquee-track {
+  display: flex;
+  width: max-content;
+  gap: 12px;
+  animation: marquee 32s linear infinite;
+}
+
+.hero-enter {
+  animation: rise-in 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.cta-glow {
+  animation: glow-pulse 2.8s ease-in-out infinite;
+}
+.demo-price {
+  animation: price-pop 2.6s cubic-bezier(0.2, 0.9, 0.3, 1.15) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1; transform: none; transition: none; }
+  .holo-card, .holo-shine, .marquee-track, .hero-enter, .cta-glow, .demo-price { animation: none; }
+}
