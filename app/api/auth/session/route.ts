@@ -39,7 +39,13 @@ export async function POST(request: Request) {
 
   if (error) {
     console.error(`[auth] session refusée : ${error.code ?? "?"} ${error.message}`);
-    return NextResponse.json({ error: "INVALID_TOKENS" }, { status: 401 });
+    // Le code de refus est renvoyé au client : il ne révèle rien de secret et
+    // c'est la seule façon de distinguer un lien périmé d'une vraie panne
+    // depuis le navigateur.
+    return NextResponse.json(
+      { error: "INVALID_TOKENS", code: error.code ?? null, detail: error.message },
+      { status: 401 },
+    );
   }
 
   return NextResponse.json({ ok: true });
