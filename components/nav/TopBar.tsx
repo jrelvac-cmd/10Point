@@ -8,16 +8,15 @@ export function TopBar({ initials, plan }: { initials: string; plan: Plan }) {
 
   return (
     <header className="flex items-center justify-between px-4 py-4">
-      <Link href="/home" aria-label={`${APP_NAME} — accueil`} className="flex items-center gap-2">
+      <Link href="/home" aria-label={`${APP_NAME} — accueil`}>
         <Image
           src="/icons/icon.svg"
-          alt=""
+          alt={APP_NAME}
           width={40}
           height={40}
-          className="h-10 w-10 rounded-xl shadow-inner"
+          className="h-10 w-10"
           priority
         />
-        <span className="text-sm font-extrabold tracking-tight text-text-primary">{APP_NAME}</span>
       </Link>
 
       <div className="flex items-center gap-2">
