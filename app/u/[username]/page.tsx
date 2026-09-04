@@ -52,7 +52,10 @@ export default async function PublicCollectionPage({
     <main className="flex-1 px-6 py-10">
       <div className="mx-auto flex w-full max-w-2xl flex-col gap-5">
         <header className="flex flex-col gap-1">
-          <span className="text-base font-extrabold tracking-tight text-accent-dark">{APP_NAME}</span>
+          <div className="flex items-center gap-2">
+            <Image src="/icons/icon.svg" alt="" width={24} height={24} className="h-6 w-6" />
+            <span className="text-sm font-extrabold tracking-tight text-text-primary">{APP_NAME}</span>
+          </div>
           <h1 className="text-2xl font-extrabold tracking-tight text-text-primary">
             Collection de {profile.username}
           </h1>

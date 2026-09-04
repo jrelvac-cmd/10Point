@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { APP_NAME, APP_URL } from "@/lib/constants";
@@ -236,7 +237,10 @@ export default function LoginPage() {
   return (
     <main className="flex-1 flex flex-col items-center justify-center px-6 py-12">
       <div className="glass-card-strong flex w-full max-w-sm flex-col gap-4 px-6 py-8">
-        <h1 className="text-center text-2xl font-extrabold tracking-tight text-text-primary">{APP_NAME}</h1>
+        <div className="flex items-center justify-center gap-2">
+          <Image src="/icons/icon.svg" alt="" width={32} height={32} className="h-8 w-8" />
+          <h1 className="text-2xl font-extrabold tracking-tight text-text-primary">{APP_NAME}</h1>
+        </div>
 
         <button
           onClick={handleGoogle}
