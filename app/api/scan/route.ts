@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { extractCardFromImage } from "@/lib/anthropic";
-import { findCandidates, isUnambiguous, ebaySearchUrl } from "@/lib/tcgdex";
+import { findCandidates, isUnambiguous, ebaySearchUrl, getSetInfo } from "@/lib/tcgdex";
 import { cacheCardAndPrices } from "@/lib/cards";
 import { canScan, remainingScans, type Plan } from "@/lib/plans";
 import { resolvePrice, variation30d, extractPrices } from "@/lib/pricing";
@@ -133,7 +133,11 @@ export async function POST(request: Request) {
   // Seul le candidat affiché est écrit en base ; persister les autres
   // allongerait le scan pour rien. Ils sont mis en cache à l'ajout, si
   // l'utilisateur en choisit un.
-  const topPrices = await cacheCardAndPrices(shortlist[0]);
+  // Les infos de set (date, abréviation) partent en parallèle de la mise en cache.
+  const [topPrices, setInfo] = await Promise.all([
+    cacheCardAndPrices(shortlist[0]),
+    shortlist[0].setId ? getSetInfo(shortlist[0].setId) : Promise.resolve({ releaseDate: null, abbreviation: null }),
+  ]);
 
   const cards = shortlist.map((card, index) => {
     const prices = index === 0 ? topPrices : extractPrices(card);
@@ -146,6 +150,11 @@ export async function POST(request: Request) {
       number: card.localId,
       set_printed_total: card.setPrintedTotal,
       rarity: card.rarity,
+      types: card.types,
+      // Les candidats d'un autre set n'ont pas leurs infos : un seul appel suffit
+      // pour le cas courant, et la page reste juste.
+      set_code: card.setId === shortlist[0].setId ? setInfo.abbreviation : null,
+      release_date: card.setId === shortlist[0].setId ? setInfo.releaseDate : null,
       image_small: card.imageSmall,
       image_large: card.imageLarge,
       // Permet de n'afficher que les cases des variantes qui existent vraiment.

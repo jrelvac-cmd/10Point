@@ -14,6 +14,8 @@ export type TcgdexCard = {
   localId: string;
   name: string;
   rarity: string | null;
+  /** Types affichés en français (Feu, Eau…), vide pour un Dresseur ou une Énergie. */
+  types: string[];
   setId: string | null;
   setName: string | null;
   setPrintedTotal: number | null;
@@ -28,6 +30,7 @@ type RawCard = {
   localId: string;
   name: string;
   rarity?: string;
+  types?: string[];
   image?: string;
   set?: { id?: string; name?: string; cardCount?: { official?: number; total?: number } };
   variants?: Partial<CardVariants>;
@@ -77,6 +80,7 @@ function toCard(raw: RawCard): TcgdexCard {
     localId: raw.localId,
     name: raw.name,
     rarity: raw.rarity ?? null,
+    types: Array.isArray(raw.types) ? raw.types : [],
     setId: raw.set?.id ?? null,
     setName: raw.set?.name ?? null,
     setPrintedTotal: raw.set?.cardCount?.official ?? raw.set?.cardCount?.total ?? null,
@@ -216,4 +220,34 @@ export function ebaySearchUrl(card: TcgdexCard) {
   const total = card.setPrintedTotal ? `/${card.setPrintedTotal}` : "";
   const q = `${card.name} ${card.localId}${total} carte pokemon`;
   return `https://www.ebay.fr/sch/i.html?_nkw=${encodeURIComponent(q)}`;
+}
+
+export type SetInfo = { releaseDate: string | null; abbreviation: string | null };
+
+const setInfoCache = new Map<string, SetInfo>();
+
+/**
+ * Date de sortie et abréviation française d'un set (« ETD », « EB9 »…).
+ * Un set ne change jamais : le résultat reste en mémoire pour la durée de vie
+ * du processus. En cas d'échec, des champs vides plutôt qu'un scan raté.
+ */
+export async function getSetInfo(setId: string): Promise<SetInfo> {
+  const cached = setInfoCache.get(setId);
+  if (cached) return cached;
+
+  const empty: SetInfo = { releaseDate: null, abbreviation: null };
+  try {
+    const raw = await request<{
+      releaseDate?: string;
+      abbreviation?: { localized?: string; official?: string };
+    }>(`/sets/${encodeURIComponent(setId)}`);
+    const info: SetInfo = {
+      releaseDate: raw?.releaseDate ?? null,
+      abbreviation: raw?.abbreviation?.localized ?? raw?.abbreviation?.official ?? null,
+    };
+    setInfoCache.set(setId, info);
+    return info;
+  } catch {
+    return empty;
+  }
 }
