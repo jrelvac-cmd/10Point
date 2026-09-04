@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { APP_URL } from "@/lib/constants";
+import { requestOrigin } from "@/lib/auth-redirect";
 
 /**
  * Ouvre la session à partir des jetons que Supabase renvoie dans le fragment
@@ -19,7 +20,7 @@ import { APP_URL } from "@/lib/constants";
  */
 export async function POST(request: Request) {
   const origin = request.headers.get("origin");
-  if (origin && origin !== APP_URL && origin !== new URL(request.url).origin) {
+  if (origin && origin !== APP_URL && origin !== requestOrigin(request)) {
     return NextResponse.json({ error: "BAD_ORIGIN" }, { status: 403 });
   }
 
@@ -43,7 +44,7 @@ export async function POST(request: Request) {
     // c'est la seule façon de distinguer un lien périmé d'une vraie panne
     // depuis le navigateur.
     return NextResponse.json(
-      { error: "INVALID_TOKENS", code: error.code ?? null, detail: error.message },
+      { error: "INVALID_TOKENS", code: error.code ?? null },
       { status: 401 },
     );
   }

@@ -7,7 +7,7 @@ const PUBLIC_PREFIXES = [
   "/legal",
   // Retour de Google OAuth : le code d'autorisation y est échangé contre une
   // session, il n'y en a donc pas encore au moment de l'appel.
-  "/auth/callback",
+  "/auth/",
   // Ouvre la session à partir des jetons d'un lien d'email : par définition,
   // aucune session n'existe encore quand elle est appelée.
   "/api/auth/session",
