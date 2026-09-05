@@ -2,25 +2,27 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Library, Settings, ScanLine } from "lucide-react";
+import { ScanLine } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { HomeIcon, LibraryIcon, SettingsIcon } from "./NavIcons";
 
 const TABS = [
-  { href: "/home", label: "Accueil", icon: Home },
-  { href: "/collection", label: "Collection", icon: Library },
-  { href: "/parametres", label: "Paramètres", icon: Settings },
+  { href: "/home", label: "Accueil", icon: HomeIcon },
+  { href: "/collection", label: "Collection", icon: LibraryIcon },
+  { href: "/parametres", label: "Paramètres", icon: SettingsIcon },
 ];
 
 /**
  * Barre inférieure d'après la maquette : une longue pastille givrée qui porte
- * les onglets, et à sa droite le bouton rond de scan, détaché.
+ * les onglets à parts égales, chacun avec son propre reflet quand actif, et
+ * à sa droite le bouton rond de scan, détaché.
  */
 export function BottomNav() {
   const pathname = usePathname();
 
   return (
     <nav className="fixed bottom-5 left-0 right-0 z-50 flex items-center gap-3 px-5">
-      <div className="glass-card flex h-14 flex-1 items-center justify-around rounded-full px-2">
+      <div className="glass-card flex h-14 flex-1 items-stretch gap-1 rounded-full p-1.5">
         {TABS.map(({ href, label, icon: Icon }) => {
           const active = pathname === href;
           return (
@@ -30,14 +32,11 @@ export function BottomNav() {
               aria-label={label}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "flex h-10 items-center gap-2 rounded-full px-4 text-sm font-medium transition-colors",
-                active
-                  ? "bg-accent/15 text-accent-dark"
-                  : "text-text-muted hover:text-text-secondary",
+                "flex flex-1 items-center justify-center rounded-full transition-colors",
+                active ? "bg-white/15 shadow-inner" : "hover:bg-white/5",
               )}
             >
-              <Icon size={20} />
-              <span className="hidden sm:inline">{label}</span>
+              <Icon active={active} className="h-6 w-6" />
             </Link>
           );
         })}
