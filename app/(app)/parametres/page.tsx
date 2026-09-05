@@ -44,7 +44,7 @@ export default async function ParametresPage({
   const left = remainingScans(plan, profile?.scans_this_month ?? 0);
 
   return (
-    <div className="flex flex-col gap-4 py-4">
+    <div className="stagger flex flex-col gap-4 py-4">
       <h1 className="text-2xl font-bold text-text-primary">Paramètres</h1>
 
       {paiement === "ok" && (

@@ -51,7 +51,7 @@ export default async function HomePage() {
     .map(toTopCard);
 
   return (
-    <div className="flex flex-col gap-4 py-2">
+    <div className="stagger flex flex-col gap-4 py-2">
       <HeroGauge
         totalValue={totalValue}
         gauge={gauge}

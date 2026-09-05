@@ -239,3 +239,35 @@ html {
 @media (prefers-reduced-motion: reduce) {
   .lock-corners, .reveal-card, .price-slam { animation: none; }
 }
+
+/* ---- Arrivée des pages et cascades ---- */
+@keyframes page-enter {
+  from { opacity: 0; transform: translateY(14px) scale(0.995); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes nav-enter {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: none; }
+}
+.page-enter { animation: page-enter 0.42s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.nav-enter { animation: nav-enter 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) 0.1s both; }
+
+/* Les enfants directs arrivent l'un après l'autre. */
+.stagger > * { animation: rise-in 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.stagger > :nth-child(1) { animation-delay: 40ms; }
+.stagger > :nth-child(2) { animation-delay: 100ms; }
+.stagger > :nth-child(3) { animation-delay: 160ms; }
+.stagger > :nth-child(4) { animation-delay: 220ms; }
+.stagger > :nth-child(5) { animation-delay: 280ms; }
+.stagger > :nth-child(6) { animation-delay: 340ms; }
+.stagger > :nth-child(7) { animation-delay: 400ms; }
+.stagger > :nth-child(8) { animation-delay: 460ms; }
+.stagger > :nth-child(n + 9) { animation-delay: 500ms; }
+
+/* Retour tactile sur toutes les pastilles d'action. */
+.btn-primary, .btn-secondary { transform: translateZ(0); }
+.btn-primary:active, .btn-secondary:active { transform: scale(0.97); }
+
+@media (prefers-reduced-motion: reduce) {
+  .page-enter, .nav-enter, .stagger > * { animation: none; }
+}

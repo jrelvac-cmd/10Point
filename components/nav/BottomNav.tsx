@@ -21,7 +21,7 @@ export function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-5 left-0 right-0 z-50 flex items-center gap-3 px-5">
+    <nav className="nav-enter fixed bottom-5 left-0 right-0 z-50 flex items-center gap-3 px-5">
       <div className="glass-card flex h-14 flex-1 items-stretch gap-1 rounded-full p-1.5">
         {TABS.map(({ href, label, icon: Icon }) => {
           const active = pathname === href;
@@ -32,7 +32,7 @@ export function BottomNav() {
               aria-label={label}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "flex flex-1 items-center justify-center rounded-full transition-colors",
+                "flex flex-1 items-center justify-center rounded-full transition-all active:scale-90",
                 active ? "bg-white/15 shadow-inner" : "hover:bg-white/5",
               )}
             >

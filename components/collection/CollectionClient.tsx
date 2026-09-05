@@ -221,7 +221,7 @@ export function CollectionClient({
         {isFiltered && <> · {formatEur(visibleValue)}</>}
       </p>
 
-      <ul className="flex flex-col gap-2">
+      <ul className="stagger flex flex-col gap-2">
         {visible.map((entry) => (
           <li key={entry.id} className="glass-card flex items-center gap-3 p-3">
             {entry.card.imageSmall && (
