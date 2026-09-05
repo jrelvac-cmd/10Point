@@ -1,6 +1,12 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "./supabase/server";
-import { resolvePrice, variation30d, type CardPriceRow } from "./pricing";
+import {
+  resolvePrice,
+  variationFromHistory,
+  VARIATION_WINDOW_DAYS,
+  type CardPriceRow,
+  type PriceVariation,
+} from "./pricing";
 
 export type CollectionEntry = {
   id: string;
@@ -20,7 +26,7 @@ export type CollectionEntry = {
   };
   unitPrice: number | null;
   lineValue: number | null;
-  variationPct: number | null;
+  variation: PriceVariation | null;
 };
 
 type Row = {
@@ -81,7 +87,13 @@ async function loadCollection(
     .eq("user_id", userId)
     .order("added_at", { ascending: false });
 
-  return ((data ?? []) as unknown as Row[]).flatMap((row) => {
+  const rows = (data ?? []) as unknown as Row[];
+  const history = await loadHistory(
+    supabase,
+    rows.flatMap((r) => (r.pokemon_cards ? [r.pokemon_cards.id] : [])),
+  );
+
+  return rows.flatMap((row) => {
     const card = row.pokemon_cards;
     if (!card) return [];
 
@@ -111,8 +123,39 @@ async function loadCollection(
         },
         unitPrice,
         lineValue: unitPrice === null ? null : unitPrice * row.quantity,
-        variationPct: variation30d(price.trend, price.avg30),
+        variation: variationFromHistory(
+          price.trend,
+          (history.get(card.id) ?? []).map((h) => ({
+            date: h.date,
+            value: row.is_reverse ? h.reverse : h.trend,
+          })),
+        ),
       },
     ];
   });
+}
+
+type HistoryRow = { date: string; trend: number | null; reverse: number | null };
+
+/** Instantanés quotidiens des cartes demandées, sur la fenêtre de variation. */
+async function loadHistory(
+  supabase: SupabaseClient,
+  cardIds: string[],
+): Promise<Map<string, HistoryRow[]>> {
+  const map = new Map<string, HistoryRow[]>();
+  if (!cardIds.length) return map;
+  const floor = new Date(Date.now() - VARIATION_WINDOW_DAYS * 86_400_000)
+    .toISOString()
+    .slice(0, 10);
+  const { data } = await supabase
+    .from("price_history")
+    .select("card_id, snapshot_date, trend, reverse_trend")
+    .in("card_id", [...new Set(cardIds)])
+    .gte("snapshot_date", floor);
+  for (const h of data ?? []) {
+    const list = map.get(h.card_id) ?? [];
+    list.push({ date: h.snapshot_date, trend: h.trend, reverse: h.reverse_trend });
+    map.set(h.card_id, list);
+  }
+  return map;
 }

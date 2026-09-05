@@ -116,7 +116,7 @@ export function HeroGauge({ totalValue, gauge, variation, cardCount, distinctCou
         viewBox="0 0 240 140"
         className="mx-auto w-full max-w-[300px]"
         role="img"
-        aria-label={`${value}. Sur 30 jours : ${gauge.down} cartes en baisse, ${gauge.stable} stables, ${gauge.up} en hausse`}
+        aria-label={`${value}. Sur ${variation?.days ?? 30} jours : ${gauge.down} cartes en baisse, ${gauge.stable} stables, ${gauge.up} en hausse`}
       >
         <defs>
           <filter id="gauge-shadow" x="-15%" y="-15%" width="130%" height="130%">
@@ -141,7 +141,7 @@ export function HeroGauge({ totalValue, gauge, variation, cardCount, distinctCou
       <div className="glass-inner mt-1 grid grid-cols-2 divide-x divide-black/10 px-2 py-3">
         <Stat
           dotClass={variation === null ? "bg-text-muted" : positive ? "bg-gauge-up" : "bg-gauge-down"}
-          label="Variation 30 j"
+          label={`Variation ${variation?.days ?? 30} j`}
           value={variation ? formatPct(variation.pct) : "—"}
           sub={variation ? `${positive ? "+" : ""}${formatEur(variation.eur)}` : "pas encore mesurée"}
           valueClass={variation === null ? undefined : positive ? "text-up" : "text-down"}

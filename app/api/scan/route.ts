@@ -5,7 +5,7 @@ import { extractCardFromImage } from "@/lib/anthropic";
 import { findCandidates, isUnambiguous, ebaySearchUrl, getSetInfo } from "@/lib/tcgdex";
 import { cacheCardAndPrices } from "@/lib/cards";
 import { canScan, remainingScans, type Plan } from "@/lib/plans";
-import { resolvePrice, variation30d, extractPrices } from "@/lib/pricing";
+import { resolvePrice, variationFromHistory, extractPrices, VARIATION_WINDOW_DAYS } from "@/lib/pricing";
 
 export const maxDuration = 60;
 
@@ -134,10 +134,18 @@ export async function POST(request: Request) {
   // allongerait le scan pour rien. Ils sont mis en cache à l'ajout, si
   // l'utilisateur en choisit un.
   // Les infos de set (date, abréviation) partent en parallèle de la mise en cache.
-  const [topPrices, setInfo] = await Promise.all([
+  const floor = new Date(Date.now() - VARIATION_WINDOW_DAYS * 86_400_000).toISOString().slice(0, 10);
+  const [topPrices, setInfo, historyRes] = await Promise.all([
     cacheCardAndPrices(shortlist[0]),
     shortlist[0].setId ? getSetInfo(shortlist[0].setId) : Promise.resolve({ releaseDate: null, abbreviation: null }),
+    admin
+      .from("price_history")
+      .select("snapshot_date, trend, reverse_trend")
+      .eq("card_id", shortlist[0].id)
+      .gte("snapshot_date", floor),
   ]);
+  // Seul le candidat affiché a un historique : les autres ne sont pas en base.
+  const history = historyRes.data ?? [];
 
   const cards = shortlist.map((card, index) => {
     const prices = index === 0 ? topPrices : extractPrices(card);
@@ -161,8 +169,26 @@ export async function POST(request: Request) {
       variants: card.variants,
       ebay_url: ebaySearchUrl(card),
       prices: {
-        normal: { ...normal, variation_30d: variation30d(normal.trend, normal.avg30) },
-        reverse: { ...reverse, variation_30d: variation30d(reverse.trend, reverse.avg30) },
+        normal: {
+          ...normal,
+          variation:
+            index === 0
+              ? variationFromHistory(
+                  normal.trend,
+                  history.map((h) => ({ date: h.snapshot_date, value: h.trend })),
+                )
+              : null,
+        },
+        reverse: {
+          ...reverse,
+          variation:
+            index === 0
+              ? variationFromHistory(
+                  reverse.trend,
+                  history.map((h) => ({ date: h.snapshot_date, value: h.reverse_trend })),
+                )
+              : null,
+        },
       },
     };
   });

@@ -55,14 +55,42 @@ export function resolvePrice(price: CardPriceRow | null, isReverse: boolean) {
   return { trend: price.trend, low: price.low, avg30: price.avg30 };
 }
 
+export type PriceVariation = {
+  /** Écart en % entre la cote d'aujourd'hui et la plus ancienne mesure de la fenêtre. */
+  pct: number;
+  /** Jours réellement couverts : 30 quand l'historique est complet, moins sinon. */
+  days: number;
+};
+
+export type PriceSnapshot = { date: string; value: number | null };
+
+export const VARIATION_WINDOW_DAYS = 30;
+
 /**
- * Variation 30 jours en % : écart entre la tendance actuelle et la moyenne des
- * 30 derniers jours. null si l'une des deux manque, pour ne jamais afficher une
- * variation inventée.
+ * Variation entre la cote d'aujourd'hui et la plus ancienne mesure disponible
+ * dans la fenêtre. Comparer la tendance à la moyenne 30 jours, comme avant,
+ * mettait face à face deux statistiques de la même période et produisait des
+ * écarts fantaisistes ; seule notre propre série quotidienne donne un vrai
+ * avant/après. null tant qu'il n'y a pas au moins un jour d'écart mesuré.
  */
-export function variation30d(trend: number | null, avg30: number | null): number | null {
-  if (trend === null || avg30 === null || avg30 === 0) return null;
-  return Math.round(((trend - avg30) / avg30) * 1000) / 10;
+export function variationFromHistory(
+  current: number | null,
+  snapshots: PriceSnapshot[],
+  today = new Date(),
+): PriceVariation | null {
+  if (current === null || current <= 0) return null;
+  const todayKey = today.toISOString().slice(0, 10);
+  const floor = new Date(today.getTime() - VARIATION_WINDOW_DAYS * 86_400_000)
+    .toISOString()
+    .slice(0, 10);
+  const oldest = snapshots
+    .filter((s) => s.value !== null && s.value > 0 && s.date >= floor && s.date < todayKey)
+    .sort((a, b) => a.date.localeCompare(b.date))[0];
+  if (!oldest) return null;
+  const days = Math.round((Date.parse(todayKey) - Date.parse(oldest.date)) / 86_400_000);
+  if (days < 1) return null;
+  const from = oldest.value as number;
+  return { pct: Math.round(((current - from) / from) * 1000) / 10, days };
 }
 
 /**
@@ -112,28 +140,33 @@ export function computeGauge(items: GaugeInput[]): GaugeBreakdown {
 export type CollectionVariation = {
   eur: number;
   pct: number;
+  /** Fenêtre la plus courte parmi les cartes mesurées : on ne prétend pas plus. */
+  days: number;
 };
 
 /**
- * Variation de la collection entière sur 30 jours : différence entre la
- * valeur actuelle et ce que valaient les mêmes cartes il y a 30 jours. Seules
+ * Variation de la collection entière sur la fenêtre mesurée : différence entre
+ * la valeur actuelle et ce que valaient les mêmes cartes au début de la fenêtre. Seules
  * les lignes dont on connaît les deux prix entrent dans le calcul, pour ne pas
  * afficher un écart trompeur. null tant qu'aucune ligne n'est mesurable.
  */
 export function computeCollectionVariation(
-  items: { lineValue: number | null; variationPct: number | null }[],
+  items: { lineValue: number | null; variation: PriceVariation | null }[],
 ): CollectionVariation | null {
   let now = 0;
   let then = 0;
-  for (const { lineValue, variationPct } of items) {
-    if (lineValue === null || variationPct === null) continue;
+  let days = Infinity;
+  for (const { lineValue, variation } of items) {
+    if (lineValue === null || variation === null) continue;
     now += lineValue;
-    then += lineValue / (1 + variationPct / 100);
+    then += lineValue / (1 + variation.pct / 100);
+    days = Math.min(days, variation.days);
   }
   if (then <= 0) return null;
   return {
     eur: Math.round((now - then) * 100) / 100,
     pct: Math.round(((now - then) / then) * 1000) / 10,
+    days,
   };
 }
 

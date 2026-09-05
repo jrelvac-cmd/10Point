@@ -69,7 +69,7 @@ export function CollectionClient({
         case "name":
           return a.card.name.localeCompare(b.card.name, "fr");
         case "variation":
-          return (b.variationPct ?? -Infinity) - (a.variationPct ?? -Infinity);
+          return (b.variation?.pct ?? -Infinity) - (a.variation?.pct ?? -Infinity);
         default:
           return b.addedAt.localeCompare(a.addedAt);
       }
@@ -252,15 +252,16 @@ export function CollectionClient({
               <span className="text-sm font-bold text-text-primary">
                 {formatEur(entry.lineValue)}
               </span>
-              {entry.variationPct !== null && (
+              {entry.variation !== null && (
                 <span
                   className={cn(
                     "font-semibold text-[11px]",
-                    entry.variationPct >= 0 ? "text-up" : "text-down",
+                    entry.variation.pct >= 0 ? "text-up" : "text-down",
                   )}
+                  title={`Sur ${entry.variation.days} jour${entry.variation.days > 1 ? "s" : ""}`}
                 >
-                  {entry.variationPct >= 0 ? "+" : ""}
-                  {entry.variationPct} %
+                  {entry.variation.pct >= 0 ? "+" : ""}
+                  {entry.variation.pct} %
                 </span>
               )}
 

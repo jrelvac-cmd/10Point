@@ -31,7 +31,7 @@ type PriceSet = {
   trend: number | null;
   low: number | null;
   avg30: number | null;
-  variation_30d: number | null;
+  variation: { pct: number; days: number } | null;
 };
 
 type ScannedCard = {
@@ -478,7 +478,7 @@ function CardPage({
 }) {
   const type = card.types[0] ?? null;
   const TypeIcon = (type && TYPE_ICONS[type]) || Circle;
-  const variation = price.variation_30d;
+  const variation = price.variation;
 
   return (
     <div className="flex flex-col gap-4 pb-6">
@@ -507,16 +507,21 @@ function CardPage({
           />
         </div>
         <div className="flex min-w-0 flex-1 flex-col items-center text-center">
-          <p className="text-sm font-bold text-text-primary">Prix Moyen :</p>
+          <p className="text-sm font-bold text-text-primary">Tendance Cardmarket :</p>
           <p className="price-pop mt-1 leading-none">
             <SplitPrice value={price.trend} />
           </p>
-          {variation !== null && (
-            <p className={cn("mt-1 text-sm font-bold", variation >= 0 ? "text-up" : "text-down")}>
-              {variation >= 0 ? "+" : ""}
-              {variation.toLocaleString("fr-FR", { maximumFractionDigits: 1 })}%
+          {variation ? (
+            <p className={cn("mt-1 text-sm font-bold", variation.pct >= 0 ? "text-up" : "text-down")}>
+              {variation.pct >= 0 ? "+" : ""}
+              {variation.pct.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} % sur {variation.days} j
             </p>
+          ) : (
+            <p className="mt-1 text-[11px] text-text-muted">Variation : pas encore mesurée</p>
           )}
+          <p className="mt-1 text-[11px] text-text-muted">
+            Moy. 30 j {formatEur(price.avg30)} · À partir de {formatEur(price.low)}
+          </p>
         </div>
       </section>
 

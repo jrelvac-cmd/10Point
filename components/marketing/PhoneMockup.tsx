@@ -38,7 +38,7 @@ export function PhoneMockup({ className }: { className?: string }) {
         <HeroGauge
           totalValue={1284.5}
           gauge={{ up: 11, stable: 9, down: 4, total: 24 }}
-          variation={{ eur: 96.4, pct: 8.1 }}
+          variation={{ eur: 96.4, pct: 8.1, days: 30 }}
           cardCount={24}
           distinctCount={19}
           plan="pro"

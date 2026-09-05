@@ -24,7 +24,7 @@ export default async function HomePage() {
   const cardCount = entries.reduce((sum, e) => sum + e.quantity, 0);
 
   const gauge = computeGauge(
-    entries.map((e) => ({ count: e.quantity, variationPct: e.variationPct })),
+    entries.map((e) => ({ count: e.quantity, variationPct: e.variation?.pct ?? null })),
   );
   const variation = computeCollectionVariation(entries);
 
@@ -35,7 +35,7 @@ export default async function HomePage() {
     setPrintedTotal: e.card.setPrintedTotal,
     imageSmall: e.card.imageSmall,
     lineValue: e.lineValue,
-    variationPct: e.variationPct,
+    variationPct: e.variation?.pct ?? null,
   });
 
   const byValue = [...entries]
@@ -45,8 +45,8 @@ export default async function HomePage() {
     .map(toTopCard);
 
   const byRise = [...entries]
-    .filter((e) => e.variationPct !== null)
-    .sort((a, b) => (b.variationPct ?? 0) - (a.variationPct ?? 0))
+    .filter((e) => e.variation !== null)
+    .sort((a, b) => (b.variation?.pct ?? 0) - (a.variation?.pct ?? 0))
     .slice(0, 5)
     .map(toTopCard);
 
