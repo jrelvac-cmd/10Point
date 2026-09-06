@@ -52,8 +52,8 @@ const config: Config = {
         sans: ["var(--font-geist-sans)", "ui-sans-serif", "system-ui"],
       },
       backdropBlur: {
-        glass: "16px",
-        "glass-strong": "24px",
+        glass: "var(--glass-blur)",
+        "glass-strong": "var(--glass-blur-strong)",
       },
       boxShadow: {
         card: "var(--shadow-card)",

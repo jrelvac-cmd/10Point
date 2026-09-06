@@ -13,11 +13,49 @@
   --glass-strong: rgba(255, 255, 255, 0.74);
   --glass-border: rgba(255, 255, 255, 0.7);
   --glass-inner: rgba(255, 255, 255, 0.92);
+  --glass-blur: 16px;
+  --glass-blur-strong: 24px;
   --text-primary: #1b1f3b;
   --text-secondary: rgba(27, 31, 59, 0.64);
   --text-muted: rgba(27, 31, 59, 0.42);
-  --shadow-card: 0 14px 36px rgba(28, 33, 96, 0.14);
+  /* L'arête claire en haut de chaque surface givrée : la lumière qui accroche le verre. */
+  --edge-light: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+  --shadow-card: var(--edge-light), 0 14px 36px rgba(28, 33, 96, 0.14);
   --shadow-inner: 0 6px 18px rgba(28, 33, 96, 0.1);
+
+  /*
+   * Ressorts, d'après les paramètres d'Apple (damping ratio + response) et
+   * échantillonnés en linear() : la durée est celle où le ressort se pose.
+   *   spring        : amorti critique, response 0,4 s — l'arrivée de tout élément.
+   *   spring-quick  : amorti critique, response 0,25 s — bascules, retours d'appui.
+   *   spring-bounce : damping 0,8 — un geste qui avait de l'élan.
+   *   spring-slam   : damping 0,6 — le prix qui claque à la reconnaissance.
+   */
+  --dur-spring: 540ms;
+  --ease-spring: linear(0, 0.0138, 0.0494, 0.0992, 0.1577, 0.2209, 0.2857, 0.3499, 0.412, 0.471, 0.5263, 0.5776, 0.6246, 0.6675, 0.7064, 0.7413, 0.7727, 0.8006, 0.8255, 0.8475, 0.867, 0.8842, 0.8993, 0.9125, 0.9241, 0.9342, 0.9431, 0.9508, 0.9575, 0.9633, 0.9683, 0.9727, 0.9765, 0.9798, 0.9826, 0.9851, 0.9872, 0.989, 0.9905, 0.9919, 0.9931, 0.994, 0.9949, 0.9956, 0.9963, 0.9968, 0.9973, 0.9977, 1);
+  --dur-spring-quick: 340ms;
+  --ease-spring-quick: var(--ease-spring);
+  --dur-spring-bounce: 450ms;
+  --ease-spring-bounce: linear(0, 0.0128, 0.0467, 0.096, 0.1558, 0.2223, 0.2922, 0.363, 0.4327, 0.5, 0.5637, 0.6232, 0.6779, 0.7276, 0.7723, 0.8122, 0.8472, 0.8778, 0.9042, 0.9267, 0.9457, 0.9616, 0.9747, 0.9854, 0.9939, 1.0006, 1.0056, 1.0094, 1.012, 1.0138, 1.0147, 1.0151, 1.0151, 1.0147, 1.014, 1.0131, 1.0121, 1.0111, 1.01, 1.0089, 1.0079, 1.0069, 1.006, 1.0051, 1.0044, 1.0037, 1.003, 1.0025, 1);
+  --dur-spring-slam: 550ms;
+  --ease-spring-slam: linear(0, 0.0194, 0.071, 0.146, 0.2364, 0.3355, 0.4377, 0.5385, 0.6345, 0.7231, 0.8027, 0.8723, 0.9314, 0.9801, 1.019, 1.0487, 1.07, 1.0841, 1.092, 1.0947, 1.0934, 1.0888, 1.0819, 1.0735, 1.0642, 1.0545, 1.0449, 1.0358, 1.0273, 1.0196, 1.0129, 1.0072, 1.0024, 0.9986, 0.9957, 0.9936, 0.9922, 0.9913, 0.991, 0.9911, 0.9915, 0.9921, 0.9929, 0.9938, 0.9947, 0.9956, 0.9965, 0.9973, 1);
+}
+
+/* Navigateurs sans linear() : une courbe proche, sans rebond. */
+@supports not (animation-timing-function: linear(0, 1)) {
+  :root {
+    --ease-spring: cubic-bezier(0.2, 0.8, 0.2, 1);
+    --ease-spring-bounce: cubic-bezier(0.2, 0.9, 0.3, 1.1);
+    --ease-spring-slam: cubic-bezier(0.2, 0.9, 0.3, 1.25);
+  }
+}
+
+html {
+  /* Les pages longues (accueil public, tarifs) ne doivent pas finir sur un
+     fond uniformément sombre : le dégradé s'étire sur la hauteur du document. */
+  background: #3a3fa6;
+  font-optical-sizing: auto;
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
@@ -27,19 +65,20 @@ body {
   min-height: 100vh;
 }
 
-/* Les pages longues (accueil public, tarifs) ne doivent pas finir sur un
-   fond uniformément sombre : le dégradé s'étire sur la hauteur du document. */
-html {
-  background: #3a3fa6;
+/* Le tracking suit la taille : serré sur les grands corps, neutre sur le texte
+   courant. Les petites étiquettes en capitales gardent leur tracking-wide. */
+h1 {
+  letter-spacing: -0.02em;
+  line-height: 1.1;
 }
 
 @layer components {
   .glass-card {
-    @apply bg-glass backdrop-blur-glass border border-glass-border rounded-[22px] shadow-card;
+    @apply bg-glass backdrop-blur-glass backdrop-saturate-150 border border-glass-border rounded-[22px] shadow-card;
   }
 
   .glass-card-strong {
-    @apply bg-glass-strong backdrop-blur-glass-strong border border-glass-border rounded-[28px] shadow-card;
+    @apply bg-glass-strong backdrop-blur-glass-strong backdrop-saturate-150 border border-glass-border rounded-[28px] shadow-card;
   }
 
   /* Carte blanche posée à l'intérieur d'une carte givrée (statistiques, listes). */
@@ -49,12 +88,12 @@ html {
 
   /* Action principale : la pastille bleue du bouton de scan. */
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-full bg-accent px-5 py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(79,95,230,0.35)] transition hover:brightness-110 disabled:opacity-50 disabled:hover:brightness-100;
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-accent px-5 py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(79,95,230,0.35)] hover:brightness-110 disabled:opacity-50 disabled:hover:brightness-100;
   }
 
   /* Action secondaire : pastille blanche. */
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 rounded-full bg-glass-inner px-5 py-3 text-sm font-semibold text-text-primary shadow-inner transition hover:bg-white disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-glass-inner px-5 py-3 text-sm font-semibold text-text-primary shadow-inner hover:bg-white disabled:opacity-50;
   }
 
   /* Champ de saisie. */
@@ -68,7 +107,7 @@ html {
   }
 
   .pill {
-    @apply rounded-full px-3 py-1.5 text-xs font-medium text-text-muted transition-colors hover:text-text-secondary;
+    @apply rounded-full px-3 py-1.5 text-xs font-medium text-text-muted hover:text-text-secondary;
   }
 
   .pill-active {
@@ -76,12 +115,57 @@ html {
   }
 }
 
-/* Reconnaissance d'une carte : la carte surgit avec un reflet, le prix monte
-   en grossissant avec un halo. */
-@keyframes card-reveal {
-  0% { transform: scale(0.88); opacity: 0; }
-  60% { transform: scale(1.04); opacity: 1; }
-  100% { transform: scale(1); opacity: 1; }
+/*
+ * Retour à l'appui, sur toute cible tactile : l'enfoncement est immédiat
+ * (100 ms) et le relâchement revient par ressort. Le retour visuel vit sur
+ * l'appui, pas sur le relâchement.
+ */
+.pressable, .btn-primary, .btn-secondary, .pill {
+  transform: translateZ(0);
+  transition:
+    transform var(--dur-spring-quick) var(--ease-spring-quick),
+    background-color 150ms ease,
+    color 150ms ease,
+    opacity 150ms ease,
+    filter 150ms ease;
+}
+.pressable:active, .btn-primary:active, .btn-secondary:active, .pill:active {
+  transform: scale(0.96);
+  transition-duration: 100ms;
+  transition-timing-function: ease-out;
+}
+.pressable-strong:active {
+  transform: scale(0.9);
+}
+
+/* Bord de défilement sous la barre basse : le contenu s'estompe dans le fond
+   au lieu de buter sur un trait. */
+.scroll-edge-bottom {
+  position: fixed;
+  inset: auto 0 0 0;
+  height: 7.5rem;
+  pointer-events: none;
+  z-index: 40;
+  background: linear-gradient(to top, rgba(58, 63, 166, 0.9), rgba(58, 63, 166, 0));
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  -webkit-mask-image: linear-gradient(to top, #000 45%, transparent);
+  mask-image: linear-gradient(to top, #000 45%, transparent);
+}
+
+/* Feuille de la page carte : sa propre surface, arrondie en haut, qui glisse
+   sur le monde de la caméra. */
+.card-sheet {
+  background: var(--bg-gradient);
+  box-shadow: var(--edge-light), 0 -12px 40px rgba(16, 20, 56, 0.35);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Reconnaissance d'une carte : la carte se matérialise (flou + échelle, pas un
+   simple fondu), un reflet la traverse, le prix monte avec un halo. */
+@keyframes materialize {
+  from { transform: scale(0.94); opacity: 0; filter: blur(10px); }
+  to { transform: scale(1); opacity: 1; filter: blur(0); }
 }
 @keyframes card-shine {
   0% { transform: translateX(-130%) skewX(-20deg); opacity: 0; }
@@ -89,13 +173,12 @@ html {
   100% { transform: translateX(230%) skewX(-20deg); opacity: 0; }
 }
 @keyframes price-pop {
-  0% { transform: translateY(16px) scale(0.82); opacity: 0; filter: drop-shadow(0 0 0 rgba(79, 95, 230, 0)); }
-  55% { transform: translateY(-3px) scale(1.07); opacity: 1; filter: drop-shadow(0 0 16px rgba(79, 95, 230, 0.6)); }
-  100% { transform: translateY(0) scale(1); opacity: 1; filter: drop-shadow(0 0 6px rgba(79, 95, 230, 0.25)); }
+  from { transform: translateY(16px) scale(0.82); opacity: 0; filter: drop-shadow(0 0 0 rgba(79, 95, 230, 0)); }
+  to { transform: translateY(0) scale(1); opacity: 1; filter: drop-shadow(0 0 6px rgba(79, 95, 230, 0.25)); }
 }
 
 .card-reveal {
-  animation: card-reveal 520ms cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+  animation: materialize var(--dur-spring) var(--ease-spring) both;
 }
 .card-shine {
   position: absolute;
@@ -105,18 +188,7 @@ html {
   animation: card-shine 900ms ease-out 260ms both;
 }
 .price-pop {
-  animation: price-pop 640ms cubic-bezier(0.2, 0.9, 0.3, 1.15) 320ms both;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .card-reveal,
-  .card-shine,
-  .price-pop {
-    animation: none;
-  }
-  .card-shine {
-    display: none;
-  }
+  animation: price-pop var(--dur-spring-bounce) var(--ease-spring-bounce) 220ms both;
 }
 
 /* ---- Page publique : apparitions, cartes flottantes, bandeau défilant ---- */
@@ -124,7 +196,7 @@ html {
 .reveal {
   opacity: 0;
   transform: translateY(24px);
-  transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: opacity 0.6s ease, transform var(--dur-spring) var(--ease-spring);
 }
 .reveal-shown {
   opacity: 1;
@@ -198,46 +270,36 @@ html {
 }
 
 .hero-enter {
-  animation: rise-in 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation: rise-in 0.8s var(--ease-spring) both;
 }
 .cta-glow {
   animation: glow-pulse 2.8s ease-in-out infinite;
 }
 .demo-price {
-  animation: price-pop 2.6s cubic-bezier(0.2, 0.9, 0.3, 1.15) infinite;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .reveal { opacity: 1; transform: none; transition: none; }
-  .holo-card, .holo-shine, .marquee-track, .hero-enter, .cta-glow, .demo-price { animation: none; }
+  animation: price-pop 2.6s var(--ease-spring-slam) infinite;
 }
 
 /* ---- Reconnaissance d'une carte : verrouillage des coins, halo, prix qui claque ---- */
 @keyframes lock-corners {
-  0% { transform: scale(1.4); opacity: 0; }
-  55% { transform: scale(0.97); opacity: 1; }
-  100% { transform: scale(1); opacity: 1; }
+  from { transform: scale(1.4); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
 }
 @keyframes reveal-card {
-  0% { transform: scale(0.82); opacity: 0; filter: drop-shadow(0 0 0 rgba(255, 255, 255, 0)); }
-  45% { transform: scale(1.03); opacity: 1; filter: drop-shadow(0 0 22px rgba(255, 255, 255, 0.85)); }
-  100% { transform: scale(1); opacity: 1; filter: drop-shadow(0 0 14px rgba(255, 255, 255, 0.55)); }
+  from { transform: scale(0.82); opacity: 0; filter: blur(8px) drop-shadow(0 0 0 rgba(255, 255, 255, 0)); }
+  to { transform: scale(1); opacity: 1; filter: blur(0) drop-shadow(0 0 14px rgba(255, 255, 255, 0.55)); }
 }
 @keyframes price-slam {
-  0% { transform: scale(0.4); opacity: 0; }
-  60% { transform: scale(1.12); opacity: 1; }
-  100% { transform: scale(1); opacity: 1; }
+  from { transform: scale(0.4); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
 }
-.lock-corners { animation: lock-corners 550ms cubic-bezier(0.2, 0.9, 0.3, 1.2) 150ms both; }
-.reveal-card { animation: reveal-card 700ms cubic-bezier(0.2, 0.9, 0.3, 1.1) both; }
+/* Les délais sont posés en ligne par le composant, qui y cale la vibration. */
+.lock-corners { animation: lock-corners var(--dur-spring-bounce) var(--ease-spring-bounce) both; }
+.reveal-card { animation: reveal-card var(--dur-spring) var(--ease-spring) both; }
 .price-slam {
-  animation: price-slam 520ms cubic-bezier(0.2, 0.9, 0.3, 1.25) 600ms both;
+  animation: price-slam var(--dur-spring-slam) var(--ease-spring-slam) both;
   -webkit-text-stroke: 2px #17402c;
   paint-order: stroke fill;
   text-shadow: 0 0 18px rgba(74, 222, 128, 0.95), 0 0 40px rgba(74, 222, 128, 0.5), 0 6px 14px rgba(0, 0, 0, 0.55);
-}
-@media (prefers-reduced-motion: reduce) {
-  .lock-corners, .reveal-card, .price-slam { animation: none; }
 }
 
 /* ---- Arrivée des pages et cascades ---- */
@@ -249,11 +311,11 @@ html {
   from { opacity: 0; transform: translateY(24px); }
   to { opacity: 1; transform: none; }
 }
-.page-enter { animation: page-enter 0.42s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
-.nav-enter { animation: nav-enter 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) 0.1s both; }
+.page-enter { animation: page-enter var(--dur-spring) var(--ease-spring) both; }
+.nav-enter { animation: nav-enter var(--dur-spring) var(--ease-spring) 0.1s both; }
 
 /* Les enfants directs arrivent l'un après l'autre. */
-.stagger > * { animation: rise-in 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.stagger > * { animation: rise-in var(--dur-spring) var(--ease-spring) both; }
 .stagger > :nth-child(1) { animation-delay: 40ms; }
 .stagger > :nth-child(2) { animation-delay: 100ms; }
 .stagger > :nth-child(3) { animation-delay: 160ms; }
@@ -264,10 +326,61 @@ html {
 .stagger > :nth-child(8) { animation-delay: 460ms; }
 .stagger > :nth-child(n + 9) { animation-delay: 500ms; }
 
-/* Retour tactile sur toutes les pastilles d'action. */
-.btn-primary, .btn-secondary { transform: translateZ(0); }
-.btn-primary:active, .btn-secondary:active { transform: scale(0.97); }
+/* Interrupteur : le bouton glisse par ressort, sans rebond. */
+.switch-knob {
+  transition: transform var(--dur-spring-quick) var(--ease-spring-quick);
+}
 
+/*
+ * Mouvement réduit : pas d'absence de retour, mais un équivalent doux. Les
+ * glissements et rebonds deviennent de courts fondus ; l'appui reste visible
+ * par la couleur seule.
+ */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
 @media (prefers-reduced-motion: reduce) {
-  .page-enter, .nav-enter, .stagger > * { animation: none; }
+  .card-reveal, .price-pop, .lock-corners, .reveal-card, .price-slam,
+  .page-enter, .nav-enter, .stagger > *, .hero-enter {
+    animation: fade-in 200ms ease both;
+  }
+  .card-shine { display: none; }
+  .reveal { opacity: 1; transform: none; transition: opacity 200ms ease; }
+  .holo-card, .holo-shine, .marquee-track, .cta-glow, .demo-price { animation: none; }
+  .pressable, .btn-primary, .btn-secondary, .pill,
+  .pressable:active, .btn-primary:active, .btn-secondary:active, .pill:active {
+    transform: none;
+    transition-duration: 100ms;
+  }
+  .pressable:active, .btn-primary:active, .btn-secondary:active, .pill:active { filter: brightness(0.92); }
+  .switch-knob { transition: none; }
+}
+
+/* Transparence réduite : le verre devient givré presque opaque, sans flou. */
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --glass: rgba(255, 255, 255, 0.93);
+    --glass-strong: rgba(255, 255, 255, 0.97);
+    --glass-blur: 0px;
+    --glass-blur-strong: 0px;
+  }
+  .scroll-edge-bottom {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* Contraste renforcé : surfaces pleines, bord franc, texte plus sombre. */
+@media (prefers-contrast: more) {
+  :root {
+    --glass: #ffffff;
+    --glass-strong: #ffffff;
+    --glass-inner: #ffffff;
+    --glass-border: rgba(27, 31, 59, 0.45);
+    --text-secondary: rgba(27, 31, 59, 0.82);
+    --text-muted: rgba(27, 31, 59, 0.66);
+    --glass-blur: 0px;
+    --glass-blur-strong: 0px;
+  }
 }

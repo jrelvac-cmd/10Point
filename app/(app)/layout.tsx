@@ -15,6 +15,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     <div className="flex-1 flex flex-col pb-28">
       <TopBar initials={initials} plan={profile?.plan ?? "free"} />
       <div className="flex-1 px-4">{children}</div>
+      <div className="scroll-edge-bottom" aria-hidden />
       <BottomNav />
     </div>
   );

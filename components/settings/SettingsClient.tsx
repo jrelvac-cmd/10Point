@@ -81,7 +81,7 @@ export function SettingsClient({
                 setTimeout(() => setCopied(false), 2000);
               }}
               aria-label="Copier le lien"
-              className="shrink-0 text-text-secondary hover:text-text-primary"
+              className="pressable pressable-strong shrink-0 rounded-full p-1 text-text-secondary hover:text-text-primary"
             >
               {copied ? <Check size={14} className="text-up" /> : <Copy size={14} />}
             </button>
@@ -120,7 +120,7 @@ export function SettingsClient({
             <button
               onClick={requestDeletion}
               disabled={busy}
-              className="rounded-full bg-down px-4 py-2.5 text-sm font-semibold text-white shadow-inner disabled:opacity-50"
+              className="pressable rounded-full bg-down px-4 py-2.5 text-sm font-semibold text-white shadow-inner disabled:opacity-50"
             >
               Confirmer la demande
             </button>
@@ -182,14 +182,14 @@ function Toggle({
         onClick={onChange}
         disabled={disabled}
         className={cn(
-          "mt-0.5 h-6 w-11 shrink-0 rounded-full border transition-colors",
+          "pressable mt-0.5 h-6 w-11 shrink-0 rounded-full border",
           checked ? "border-accent bg-accent" : "border-black/10 bg-black/10",
           disabled && "cursor-not-allowed",
         )}
       >
         <span
           className={cn(
-            "block h-4 w-4 rounded-full bg-white transition-transform",
+            "switch-knob block h-4 w-4 rounded-full bg-white",
             checked ? "translate-x-6" : "translate-x-1",
           )}
         />

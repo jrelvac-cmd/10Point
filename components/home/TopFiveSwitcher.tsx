@@ -116,7 +116,7 @@ export function TopFiveSwitcher({
         <div className="flex justify-end pt-1">
           <Link
             href="/collection"
-            className="flex items-center gap-1 rounded-full border border-black/10 bg-white px-3 py-1 text-[11px] font-semibold text-text-primary shadow-inner transition-colors hover:bg-black/5"
+            className="pressable flex items-center gap-1 rounded-full border border-black/10 bg-white px-3 py-1 text-[11px] font-semibold text-text-primary shadow-inner hover:bg-black/5"
           >
             Voir plus <Plus size={12} strokeWidth={2.5} />
           </Link>
@@ -145,7 +145,7 @@ function ToggleIcon({
       aria-pressed={active}
       title={label}
       className={cn(
-        "flex h-6 w-6 items-center justify-center rounded-full transition-colors",
+        "pressable pressable-strong flex h-6 w-6 items-center justify-center rounded-full",
         active ? "bg-up text-white" : "text-text-muted hover:text-text-secondary",
       )}
     >

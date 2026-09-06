@@ -136,7 +136,7 @@ export function Viewfinder({
           <button
             type="button"
             onClick={onNativeCamera}
-            className="rounded-full bg-white px-5 py-3 text-sm font-semibold text-text-primary"
+            className="pressable rounded-full bg-white px-5 py-3 text-sm font-semibold text-text-primary"
           >
             Ouvrir l&apos;appareil photo
           </button>
@@ -177,7 +177,7 @@ export function Viewfinder({
               onClick={shoot}
               disabled={shooting}
               aria-label="Prendre la photo"
-              className="flex h-16 w-16 items-center justify-center rounded-full bg-accent text-white shadow-[0_10px_28px_rgba(79,95,230,0.55)] transition-transform active:scale-95 disabled:opacity-60"
+              className="pressable pressable-strong flex h-16 w-16 items-center justify-center rounded-full bg-accent text-white shadow-[0_10px_28px_rgba(79,95,230,0.55)] disabled:opacity-60"
             >
               <ScanLine size={26} />
             </button>
@@ -219,7 +219,7 @@ function RoundButton({
       title={label}
       aria-pressed={active}
       className={cn(
-        "flex h-12 w-12 items-center justify-center rounded-full shadow-inner transition-colors",
+        "pressable pressable-strong flex h-12 w-12 items-center justify-center rounded-full shadow-inner",
         active ? "bg-accent text-white ring-2 ring-white/80" : "bg-white text-text-primary hover:bg-white/90",
       )}
     >

@@ -26,6 +26,7 @@ import { cn } from "@/lib/utils";
 import { formatEur } from "@/lib/pricing";
 import { BULK_SESSION_MAX, type Plan } from "@/lib/plans";
 import { TopBar } from "@/components/nav/TopBar";
+import { CardSheet, type CardSheetHandle } from "./CardSheet";
 import { Viewfinder } from "./Viewfinder";
 
 type PriceSet = {
@@ -66,6 +67,9 @@ type Props = {
 
 /** Durée de l'animation de reconnaissance avant la page carte. */
 const REVEAL_MS = 2000;
+/** Instants de la scène de reconnaissance : les vibrations tombent sur la même image que le visuel. */
+const LOCK_DELAY_MS = 150;
+const SLAM_DELAY_MS = 600;
 
 const TYPE_ICONS: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
   Feu: Flame,
@@ -83,12 +87,13 @@ const TYPE_ICONS: Record<string, React.ComponentType<{ size?: number; className?
 export function ScanClient({ isPro, plan, initials, quota, scansThisMonth }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
+  const sheetRef = useRef<CardSheetHandle>(null);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [candidates, setCandidates] = useState<ScannedCard[] | null>(null);
   const [selected, setSelected] = useState<ScannedCard | null>(null);
-  const [phase, setPhase] = useState<"reveal" | "details">("details");
+  const [phase, setPhase] = useState<"reveal" | "details">("reveal");
   const [shotUrl, setShotUrl] = useState<string | null>(null);
   const [isHolo, setIsHolo] = useState(false);
   const [isReverse, setIsReverse] = useState(false);
@@ -104,12 +109,18 @@ export function ScanClient({ isPro, plan, initials, quota, scansThisMonth }: Pro
   const [bulkBlocked, setBulkBlocked] = useState(false);
 
   // Chaque carte reconnue passe par l'animation de verrouillage avant la page.
-  useEffect(() => {
-    if (!selected) return;
+  // La phase est posée dans le même rendu que la carte : sinon la page carte
+  // apparaîtrait une image avant la scène de reconnaissance.
+  function select(card: ScannedCard) {
+    setSelected(card);
     setPhase("reveal");
+  }
+
+  useEffect(() => {
+    if (!selected || phase !== "reveal") return;
     const timer = setTimeout(() => setPhase("details"), REVEAL_MS);
     return () => clearTimeout(timer);
-  }, [selected]);
+  }, [selected, phase]);
 
   function reset() {
     setCandidates(null);
@@ -146,10 +157,11 @@ export function ScanClient({ isPro, plan, initials, quota, scansThisMonth }: Pro
       }
 
       setCandidates(json.cards);
-      if (json.cards.length === 1) setSelected(json.cards[0]);
+      if (json.cards.length === 1) select(json.cards[0]);
       setScansLeft(json.remaining_scans);
-      // Retour haptique à la reconnaissance ; absent sur iOS, d'où l'optionnel.
-      if (json.cards.length) navigator.vibrate?.(json.cards.length === 1 ? [30, 40, 70] : 30);
+      // Une seule carte : la vibration est calée sur la scène de reconnaissance.
+      // Plusieurs : rien à animer, un simple tic signale le choix à faire.
+      if (json.cards.length > 1) navigator.vibrate?.(30);
     } catch {
       setError("Connexion impossible. Vérifie ton réseau.");
     } finally {
@@ -183,15 +195,22 @@ export function ScanClient({ isPro, plan, initials, quota, scansThisMonth }: Pro
       const unit = (isReverse ? selected.prices.reverse.reference : selected.prices.normal.reference) ?? 0;
       setBulkCount((c) => c + 1);
       setBulkValue((v) => v + unit * quantity);
+      navigator.vibrate?.(12);
 
-      // La visée réapparaît d'elle-même une fois le résultat effacé.
-      if (thenNext) reset();
+      // La feuille redescend dans la caméra, puis la visée réapparaît.
+      if (thenNext) closeSheet(reset);
       else setAdded(true);
     } catch {
       setError("Connexion impossible.");
     } finally {
       setLoading(false);
     }
+  }
+
+  /** Fait redescendre la page carte avant d'appliquer la suite ; sans feuille montée, tout de suite. */
+  function closeSheet(then: () => void) {
+    if (sheetRef.current) sheetRef.current.dismiss(then);
+    else then();
   }
 
   const price = selected ? (isReverse ? selected.prices.reverse : selected.prices.normal) : null;
@@ -259,14 +278,19 @@ export function ScanClient({ isPro, plan, initials, quota, scansThisMonth }: Pro
           <Link
             href="/home"
             aria-label="Retour à l'accueil"
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-text-primary shadow-inner"
+            className="pressable pressable-strong flex h-10 w-10 items-center justify-center rounded-full bg-white text-text-primary shadow-inner"
           >
             <ArrowLeft size={18} />
           </Link>
         </header>
       )}
 
-      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto">
+      <div
+        className={cn(
+          "flex min-h-0 flex-1 flex-col gap-4",
+          showingCard ? "overflow-hidden" : "overflow-y-auto",
+        )}
+      >
         {!candidates && !loading && (
           <Viewfinder
             burstActive={bulkMode}
@@ -313,8 +337,8 @@ export function ScanClient({ isPro, plan, initials, quota, scansThisMonth }: Pro
               {candidates.map((card) => (
                 <button
                   key={card.id}
-                  onClick={() => setSelected(card)}
-                  className="glass-card flex flex-col gap-2 p-2 text-left transition-colors hover:bg-black/5"
+                  onClick={() => select(card)}
+                  className="pressable glass-card flex flex-col gap-2 p-2 text-left hover:bg-black/5"
                 >
                   <Image
                     src={card.image_large ?? ""}
@@ -345,24 +369,39 @@ export function ScanClient({ isPro, plan, initials, quota, scansThisMonth }: Pro
         )}
 
         {showingCard && (
-          <CardPage
-            card={selected}
-            price={price}
-            isHolo={isHolo}
-            isReverse={isReverse}
-            quantity={quantity}
-            added={added}
-            loading={loading}
-            bulkMode={bulkMode}
-            bulkFull={bulkFull}
-            hasAlternatives={(candidates?.length ?? 0) > 1}
-            onHolo={() => setIsHolo(!isHolo)}
-            onReverse={() => setIsReverse(!isReverse)}
-            onQuantity={setQuantity}
-            onAdd={handleAdd}
-            onReset={reset}
-            onBack={() => setSelected(null)}
-          />
+          <CardSheet
+            ref={sheetRef}
+            onDismiss={reset}
+            backdrop={
+              shotUrl && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={shotUrl}
+                  alt=""
+                  className="absolute inset-0 h-full w-full object-cover opacity-40 blur-[2px]"
+                />
+              )
+            }
+          >
+            <CardPage
+              card={selected}
+              price={price}
+              isHolo={isHolo}
+              isReverse={isReverse}
+              quantity={quantity}
+              added={added}
+              loading={loading}
+              bulkMode={bulkMode}
+              bulkFull={bulkFull}
+              hasAlternatives={(candidates?.length ?? 0) > 1}
+              onHolo={() => setIsHolo(!isHolo)}
+              onReverse={() => setIsReverse(!isReverse)}
+              onQuantity={setQuantity}
+              onAdd={handleAdd}
+              onReset={() => closeSheet(reset)}
+              onBack={() => closeSheet(() => setSelected(null))}
+            />
+          </CardSheet>
         )}
       </div>
     </div>
@@ -387,6 +426,17 @@ function RevealScene({
   total: number | null;
   onSkip: () => void;
 }) {
+  // Vibrations sur la même image que le visuel : un tic quand les coins se
+  // referment, la secousse quand le prix claque. Absent sur iOS, d'où l'optionnel.
+  useEffect(() => {
+    const lock = setTimeout(() => navigator.vibrate?.(10), LOCK_DELAY_MS);
+    const slam = setTimeout(() => navigator.vibrate?.([30, 40, 70]), SLAM_DELAY_MS);
+    return () => {
+      clearTimeout(lock);
+      clearTimeout(slam);
+    };
+  }, []);
+
   return (
     <button
       type="button"
@@ -412,7 +462,7 @@ function RevealScene({
       )}
 
       <div className="relative aspect-[63/88] w-[62%] max-w-[280px]">
-        <div className="lock-corners absolute -inset-3">
+        <div className="lock-corners absolute -inset-3" style={{ animationDelay: `${LOCK_DELAY_MS}ms` }}>
           {[
             "left-0 top-0 rounded-tl-2xl border-l-[6px] border-t-[6px]",
             "right-0 top-0 rounded-tr-2xl border-r-[6px] border-t-[6px]",
@@ -436,7 +486,10 @@ function RevealScene({
         </div>
 
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className="price-slam text-[44px] font-extrabold tracking-tight text-white">
+          <span
+            className="price-slam text-[44px] font-extrabold tracking-tight text-white"
+            style={{ animationDelay: `${SLAM_DELAY_MS}ms` }}
+          >
             {formatEur(price)}
           </span>
         </div>
@@ -486,7 +539,7 @@ function CardPage({
   const variation = price.variation;
 
   return (
-    <div className="flex flex-col gap-4 pb-6">
+    <div className="flex flex-col gap-4 px-3 pb-6 pt-1">
       <div className="card-reveal relative mx-auto w-[64%] max-w-[260px] overflow-hidden rounded-xl shadow-[0_18px_40px_rgba(20,25,90,0.35)]">
         <Image
           src={card.image_large ?? ""}
@@ -677,7 +730,7 @@ function Toggle({
       onClick={onClick}
       aria-pressed={active}
       className={cn(
-        "flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium shadow-inner transition-colors",
+        "pressable flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium shadow-inner",
         active
           ? "bg-accent/15 text-accent-dark ring-2 ring-accent/60"
           : "bg-glass-inner text-text-muted hover:text-text-secondary",

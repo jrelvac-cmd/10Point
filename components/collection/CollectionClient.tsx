@@ -177,7 +177,7 @@ export function CollectionClient({
         <button
           onClick={() => setShowFilters(!showFilters)}
           className={cn(
-            "pill-group flex items-center gap-2 px-3 py-2 text-xs",
+            "pressable pill-group flex items-center gap-2 px-3 py-2 text-xs",
             isFiltered ? "text-accent-dark" : "text-text-muted",
           )}
         >
@@ -365,7 +365,7 @@ function IconButton({
       aria-label={label}
       title={label}
       className={cn(
-        "flex h-7 w-7 items-center justify-center rounded-lg bg-white shadow-inner transition-colors disabled:opacity-30",
+        "pressable pressable-strong flex h-7 w-7 items-center justify-center rounded-lg bg-white shadow-inner disabled:opacity-30",
         danger ? "text-down hover:bg-down/10" : "text-text-secondary hover:bg-black/5",
       )}
     >

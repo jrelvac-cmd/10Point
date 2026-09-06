@@ -32,7 +32,7 @@ export function BottomNav() {
               aria-label={label}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "flex flex-1 items-center justify-center rounded-full transition-all active:scale-90",
+                "pressable pressable-strong flex flex-1 items-center justify-center rounded-full",
                 active ? "bg-white/15 shadow-inner" : "hover:bg-white/5",
               )}
             >
@@ -45,7 +45,7 @@ export function BottomNav() {
       <Link
         href="/scan"
         aria-label="Scanner une carte"
-        className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-accent text-white shadow-[0_10px_24px_rgba(79,95,230,0.45)] transition-transform hover:scale-105"
+        className="pressable pressable-strong flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-accent text-white shadow-[0_10px_24px_rgba(79,95,230,0.45)] hover:brightness-110"
       >
         <ScanLine size={24} />
       </Link>

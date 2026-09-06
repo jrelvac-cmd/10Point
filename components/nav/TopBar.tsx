@@ -8,7 +8,7 @@ export function TopBar({ initials, plan }: { initials: string; plan: Plan }) {
 
   return (
     <header className="flex items-center justify-between px-4 py-4">
-      <Link href="/home" aria-label={`${APP_NAME} — accueil`}>
+      <Link href="/home" aria-label={`${APP_NAME} — accueil`} className="pressable rounded-full">
         <Image
           src="/icons/icon.svg"
           alt={APP_NAME}
@@ -23,14 +23,14 @@ export function TopBar({ initials, plan }: { initials: string; plan: Plan }) {
         {/* Le plan est cliquable : un compte gratuit arrive directement sur les offres. */}
         <Link
           href={pro ? "/parametres" : "/pricing"}
-          className="glass-inner flex h-9 items-center rounded-full px-4 text-xs font-bold tracking-wide text-text-primary"
+          className="pressable glass-inner flex h-9 items-center rounded-full px-4 text-xs font-bold tracking-wide text-text-primary"
         >
           {pro ? "PRO" : "FREE"}
         </Link>
         <Link
           href="/parametres"
           aria-label="Paramètres du compte"
-          className="glass-inner flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold text-text-primary"
+          className="pressable glass-inner flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold text-text-primary"
         >
           {initials}
         </Link>
