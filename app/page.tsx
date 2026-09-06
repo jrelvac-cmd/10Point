@@ -561,7 +561,7 @@ function AxisVisual({ kind }: { kind: "price" | "moves" | "share" }) {
       <div className="glass-card-strong flex items-center gap-3 px-4 py-3">
         <Share2 size={18} className="shrink-0 text-accent-dark" />
         <span className="min-w-0 flex-1 truncate text-sm font-semibold text-text-primary">
-          mintcard.app/u/ton-pseudo
+          mintcard.fr/u/ton-pseudo
         </span>
         <span className="rounded-full bg-accent px-3 py-1.5 text-xs font-semibold text-white">Copier</span>
       </div>

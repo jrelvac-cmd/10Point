@@ -15,7 +15,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
  * le code : le dépôt étant public, un mot de passe fixe aurait permis à
  * n'importe qui de se connecter au compte démo sur la base de production.
  */
-const DEMO_EMAIL = "demo@mintcard.app";
+const DEMO_EMAIL = "demo@mintcard.fr";
 const DEMO_USERNAME = "demo";
 
 export async function POST() {
