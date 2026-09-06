@@ -1,29 +1,19 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { getSessionUser } from "@/lib/auth";
+import { getProfile } from "@/lib/profile";
 import { BottomNav } from "@/components/nav/BottomNav";
 import { TopBar } from "@/components/nav/TopBar";
-import type { Plan } from "@/lib/plans";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
+  const user = await getSessionUser();
   if (!user) redirect("/login");
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("username, plan")
-    .eq("id", user.id)
-    .maybeSingle();
-
+  const profile = await getProfile(user.id);
   const initials = (profile?.username ?? user.email ?? "??").slice(0, 2).toUpperCase();
-  const plan = (profile?.plan ?? "free") as Plan;
 
   return (
     <div className="flex-1 flex flex-col pb-28">
-      <TopBar initials={initials} plan={plan} />
+      <TopBar initials={initials} plan={profile?.plan ?? "free"} />
       <div className="flex-1 px-4">{children}</div>
       <BottomNav />
     </div>

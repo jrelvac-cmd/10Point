@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { getJwks } from "./jwks";
 
 const PUBLIC_PREFIXES = [
   "/login",
@@ -58,9 +59,12 @@ export async function updateSession(request: NextRequest) {
     },
   );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Vérification locale de la signature du jeton plutôt qu'un appel au serveur
+  // d'authentification : ce middleware tourne sur chaque navigation, c'était
+  // un aller-retour réseau systématique avant même de servir la page.
+  const keys = await getJwks().catch(() => undefined);
+  const { data: claims } = await supabase.auth.getClaims(undefined, keys ? { keys } : undefined);
+  const user = claims?.claims?.sub ? { id: claims.claims.sub } : null;
 
   const { pathname } = request.nextUrl;
 

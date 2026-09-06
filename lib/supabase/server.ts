@@ -1,7 +1,14 @@
+import { cache } from "react";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
-export async function createClient() {
+/**
+ * Un seul client par requête, partagé entre le layout, la page et les
+ * bibliothèques qu'ils appellent : `cache` de React mémorise le résultat le
+ * temps du rendu. Sans cela, chaque couche recréait son client et relançait
+ * ses propres lectures de session.
+ */
+export const createClient = cache(async () => {
   const cookieStore = await cookies();
 
   return createServerClient(
@@ -25,4 +32,4 @@ export async function createClient() {
       },
     },
   );
-}
+});

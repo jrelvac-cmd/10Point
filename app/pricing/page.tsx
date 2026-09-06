@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { Check, Minus } from "lucide-react";
-import { createClient } from "@/lib/supabase/server";
+import { getSessionUser } from "@/lib/auth";
 import { FREE_SCANS_PER_MONTH, FREE_COLLECTION_LIMIT } from "@/lib/plans";
 import { cn } from "@/lib/utils";
 
@@ -79,10 +79,7 @@ export default async function PricingPage({
   searchParams: Promise<{ error?: string }>;
 }) {
   const { error } = await searchParams;
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getSessionUser();
 
   return (
     <main className="flex-1 flex flex-col items-center gap-8 px-6 py-16">

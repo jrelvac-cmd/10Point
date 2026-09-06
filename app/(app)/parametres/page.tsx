@@ -1,7 +1,9 @@
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { after } from "next/server";
+import { getSessionUser } from "@/lib/auth";
+import { getProfile } from "@/lib/profile";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { SettingsClient } from "@/components/settings/SettingsClient";
 import { reconcileSubscription } from "@/lib/subscription";
@@ -20,25 +22,27 @@ export default async function ParametresPage({
   searchParams: Promise<{ paiement?: string }>;
 }) {
   const { paiement } = await searchParams;
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = (await getSessionUser())!;
+  const profile = await getProfile(user.id);
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select(
-      "username, plan, plan_expires_at, whop_membership_id, share_collection, notify_price_change, scans_this_month",
-    )
-    .eq("id", user!.id)
-    .maybeSingle();
-
-  // Filet si un webhook Whop s'est perdu : on relit l'état réel de l'abonnement.
-  const subscription = await reconcileSubscription(user!.id, {
-    plan: (profile?.plan ?? "free") as Plan,
+  const known = {
+    plan: profile?.plan ?? "free",
     planExpiresAt: profile?.plan_expires_at ?? null,
     whopMembershipId: profile?.whop_membership_id ?? null,
-  });
+  };
+
+  // Filet si un webhook Whop s'est perdu : on relit l'état réel de l'abonnement.
+  // L'appel à Whop est lent ; on ne l'attend que lorsqu'il peut changer ce qui
+  // s'affiche tout de suite (retour de paiement, échéance dépassée). Sinon il
+  // part après l'envoi de la page et corrige la base pour la visite suivante.
+  const expired = known.planExpiresAt !== null && new Date(known.planExpiresAt) <= new Date();
+  const mustWait = paiement === "ok" || expired;
+  const subscription = mustWait
+    ? await reconcileSubscription(user.id, known)
+    : known;
+  if (!mustWait && known.whopMembershipId) {
+    after(() => reconcileSubscription(user.id, known).catch(() => undefined));
+  }
 
   const plan = subscription.plan;
   const left = remainingScans(plan, profile?.scans_this_month ?? 0);

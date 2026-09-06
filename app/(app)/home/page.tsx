@@ -1,24 +1,17 @@
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { getSessionUser } from "@/lib/auth";
+import { getProfile } from "@/lib/profile";
 import { getCollection } from "@/lib/collection";
 import { computeCollectionVariation, computeGauge } from "@/lib/pricing";
-import type { Plan } from "@/lib/plans";
 import { HeroGauge } from "@/components/home/HeroGauge";
 import { TopFiveSwitcher, type TopCard } from "@/components/home/TopFiveSwitcher";
 
 export default async function HomePage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const [entries, { data: profile }] = await Promise.all([
-    getCollection(user!.id),
-    supabase.from("profiles").select("plan").eq("id", user!.id).maybeSingle(),
-  ]);
-  const plan = (profile?.plan ?? "free") as Plan;
+  const user = (await getSessionUser())!;
+  const [entries, profile] = await Promise.all([getCollection(user.id), getProfile(user.id)]);
+  const plan = profile?.plan ?? "free";
 
   const totalValue = entries.reduce((sum, e) => sum + (e.lineValue ?? 0), 0);
   const cardCount = entries.reduce((sum, e) => sum + e.quantity, 0);

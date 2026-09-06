@@ -1,23 +1,16 @@
-import { createClient } from "@/lib/supabase/server";
+import { getSessionUser } from "@/lib/auth";
+import { getProfile } from "@/lib/profile";
 import { ScanClient } from "@/components/scan/ScanClient";
-import { isPro, scanQuotaFor, type Plan } from "@/lib/plans";
+import { isPro, scanQuotaFor } from "@/lib/plans";
 
 export const dynamic = "force-dynamic";
 
 export default async function ScanPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = (await getSessionUser())!;
+  const profile = await getProfile(user.id);
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("username, plan, scans_this_month")
-    .eq("id", user!.id)
-    .maybeSingle();
-
-  const plan = (profile?.plan ?? "free") as Plan;
-  const initials = (profile?.username ?? user!.email ?? "??").slice(0, 2).toUpperCase();
+  const plan = profile?.plan ?? "free";
+  const initials = (profile?.username ?? user.email ?? "??").slice(0, 2).toUpperCase();
 
   return (
     <ScanClient
