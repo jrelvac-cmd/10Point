@@ -4,11 +4,21 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { Camera, Layers, Loader2, Plus, ScanLine } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  CardDetector,
+  SAMPLE_HEIGHT,
+  SAMPLE_INTERVAL_MS,
+  SAMPLE_WIDTH,
+  toGray,
+  type DetectorState,
+} from "@/lib/card-detect";
 
 type CameraState = "starting" | "ready" | "refused" | "unavailable";
 
 type Props = {
   burstActive: boolean;
+  /** Faux après un résultat : la carte doit bouger avant d'être scannée de nouveau. */
+  armedAtStart: boolean;
   /** Pastille affichée au-dessus des boutons : état de la rafale, ou rien. */
   notice: React.ReactNode;
   onCapture: (file: File) => void;
@@ -27,6 +37,7 @@ type Props = {
  */
 export function Viewfinder({
   burstActive,
+  armedAtStart,
   notice,
   onCapture,
   onImport,
@@ -36,6 +47,8 @@ export function Viewfinder({
   const videoRef = useRef<HTMLVideoElement>(null);
   const [state, setState] = useState<CameraState>("starting");
   const [shooting, setShooting] = useState(false);
+  const [detect, setDetect] = useState<DetectorState>("idle");
+  const shootRef = useRef<() => void>(() => {});
 
   useEffect(() => {
     if (!navigator.mediaDevices?.getUserMedia) {
@@ -75,7 +88,7 @@ export function Viewfinder({
 
   async function shoot() {
     const video = videoRef.current;
-    if (!video?.videoWidth) return;
+    if (!video?.videoWidth || shooting) return;
     setShooting(true);
 
     const canvas = document.createElement("canvas");
@@ -92,6 +105,53 @@ export function Viewfinder({
     }
     onCapture(new File([blob], "scan.jpg", { type: "image/jpeg" }));
   }
+
+  shootRef.current = shoot;
+
+  // Scan automatique : toutes les 150 ms, une vignette de la zone de cadrage
+  // est lue dans le flux ; une carte nette et immobile pendant ~600 ms
+  // déclenche la reconnaissance sans appui. Le bouton reste disponible.
+  useEffect(() => {
+    if (state !== "ready") return;
+    const video = videoRef.current;
+    if (!video) return;
+
+    const canvas = document.createElement("canvas");
+    canvas.width = SAMPLE_WIDTH;
+    canvas.height = SAMPLE_HEIGHT;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    if (!ctx) return;
+
+    const gray = new Uint8ClampedArray(SAMPLE_WIDTH * SAMPLE_HEIGHT);
+    const detector = new CardDetector(armedAtStart);
+    let fired = false;
+
+    const tick = () => {
+      if (fired || document.hidden || !video.videoWidth) return;
+      // Zone de cadrage : au format carte, 60 % de la hauteur, un peu au-dessus
+      // du centre comme le repère à l'écran.
+      const vw = video.videoWidth;
+      const vh = video.videoHeight;
+      let ch = vh * 0.6;
+      let cw = (ch * 63) / 88;
+      if (cw > vw * 0.9) {
+        cw = vw * 0.9;
+        ch = (cw * 88) / 63;
+      }
+      ctx.drawImage(video, (vw - cw) / 2, (vh - ch) / 2 - vh * 0.04, cw, ch, 0, 0, SAMPLE_WIDTH, SAMPLE_HEIGHT);
+      const { data } = ctx.getImageData(0, 0, SAMPLE_WIDTH, SAMPLE_HEIGHT);
+      const result = detector.feed(toGray(data, gray), SAMPLE_WIDTH, SAMPLE_HEIGHT);
+      setDetect(result.state);
+      if (result.fire) {
+        fired = true;
+        navigator.vibrate?.(10);
+        shootRef.current();
+      }
+    };
+
+    const id = setInterval(tick, SAMPLE_INTERVAL_MS);
+    return () => clearInterval(id);
+  }, [state, armedAtStart]);
 
   return (
     <div className="relative min-h-0 w-full flex-1 overflow-hidden rounded-[28px] bg-gradient-to-b from-[#2a2f5e] to-[#0f1340] shadow-card">
@@ -152,10 +212,29 @@ export function Viewfinder({
               les coins, pour ne pas masquer la carte. */}
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center pb-24 pt-10">
             <div className="relative aspect-[63/88] h-[64%]">
-              <Corner className="left-0 top-0 rounded-tl-2xl border-l-[5px] border-t-[5px]" />
-              <Corner className="right-0 top-0 rounded-tr-2xl border-r-[5px] border-t-[5px]" />
-              <Corner className="bottom-0 left-0 rounded-bl-2xl border-b-[5px] border-l-[5px]" />
-              <Corner className="bottom-0 right-0 rounded-br-2xl border-b-[5px] border-r-[5px]" />
+              <Corner locked={detect === "locked"} className="left-0 top-0 rounded-tl-2xl border-l-[5px] border-t-[5px]" />
+              <Corner locked={detect === "locked"} className="right-0 top-0 rounded-tr-2xl border-r-[5px] border-t-[5px]" />
+              <Corner locked={detect === "locked"} className="bottom-0 left-0 rounded-bl-2xl border-b-[5px] border-l-[5px]" />
+              <Corner locked={detect === "locked"} className="bottom-0 right-0 rounded-br-2xl border-b-[5px] border-r-[5px]" />
+              {/* Sous le repère : ce que la détection voit, pour que l'attente se comprenne. */}
+              <p
+                aria-live="polite"
+                className={cn(
+                  "absolute -bottom-9 left-1/2 w-max -translate-x-1/2 rounded-full px-3 py-1 text-[11px] font-semibold backdrop-blur transition-colors",
+                  detect === "locked" && "bg-emerald-400/90 text-[#0b2a18]",
+                  detect === "holding" && "bg-white/85 text-text-primary",
+                  detect === "parked" && "bg-black/45 text-white/85",
+                  detect === "idle" && "bg-black/35 text-white/70",
+                )}
+              >
+                {detect === "locked"
+                  ? "Carte détectée"
+                  : detect === "holding"
+                    ? "Ne bouge plus…"
+                    : detect === "parked"
+                      ? "Présente une autre carte, ou appuie"
+                      : "Place une carte dans le cadre"}
+              </p>
             </div>
           </div>
 
@@ -196,8 +275,16 @@ export function Viewfinder({
   );
 }
 
-function Corner({ className }: { className: string }) {
-  return <span className={cn("absolute h-9 w-9 border-white", className)} />;
+function Corner({ className, locked }: { className: string; locked: boolean }) {
+  return (
+    <span
+      className={cn(
+        "absolute h-9 w-9 transition-colors duration-150",
+        locked ? "border-emerald-400 drop-shadow-[0_0_10px_rgba(74,222,128,0.9)]" : "border-white",
+        className,
+      )}
+    />
+  );
 }
 
 function RoundButton({

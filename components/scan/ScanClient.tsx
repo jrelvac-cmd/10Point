@@ -88,6 +88,8 @@ export function ScanClient({ isPro, plan, initials, quota, scansThisMonth }: Pro
   const fileRef = useRef<HTMLInputElement>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
   const sheetRef = useRef<CardSheetHandle>(null);
+  // Après un résultat, la carte restée sous la caméra ne doit pas repartir en scan toute seule.
+  const hadResultRef = useRef(false);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -165,6 +167,7 @@ export function ScanClient({ isPro, plan, initials, quota, scansThisMonth }: Pro
     } catch {
       setError("Connexion impossible. Vérifie ton réseau.");
     } finally {
+      hadResultRef.current = true;
       setLoading(false);
     }
   }
@@ -294,6 +297,7 @@ export function ScanClient({ isPro, plan, initials, quota, scansThisMonth }: Pro
         {!candidates && !loading && (
           <Viewfinder
             burstActive={bulkMode}
+            armedAtStart={!hadResultRef.current}
             notice={burstNotice}
             onCapture={handleFile}
             onImport={() => fileRef.current?.click()}
