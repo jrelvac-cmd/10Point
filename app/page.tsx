@@ -60,7 +60,7 @@ const AXES = [
     icon: Euro,
     kicker: "Le prix qui compte",
     title: "Des cotes Cardmarket, en euros. Pas une estimation en dollars.",
-    text: "La plupart des applications donnent un prix américain approximatif. TenPoint lit la cote du marché européen, celui où tu achètes et où tu vends réellement.",
+    text: `La plupart des applications donnent un prix américain approximatif. ${APP_NAME} lit la cote du marché européen, celui où tu achètes et où tu vends réellement.`,
     visual: "price",
   },
   {
@@ -86,7 +86,7 @@ const FAQ = [
   },
   {
     q: "Les cartes japonaises et anglaises sont-elles gérées ?",
-    a: "Pas encore. TenPoint se concentre pour l'instant sur les cartes françaises, afin de les identifier correctement plutôt que d'en couvrir beaucoup approximativement.",
+    a: `Pas encore. ${APP_NAME} se concentre pour l'instant sur les cartes françaises, afin de les identifier correctement plutôt que d'en couvrir beaucoup approximativement.`,
   },
   {
     q: "Et si une carte est mal reconnue ?",
@@ -561,7 +561,7 @@ function AxisVisual({ kind }: { kind: "price" | "moves" | "share" }) {
       <div className="glass-card-strong flex items-center gap-3 px-4 py-3">
         <Share2 size={18} className="shrink-0 text-accent-dark" />
         <span className="min-w-0 flex-1 truncate text-sm font-semibold text-text-primary">
-          tenpoint.app/u/ton-pseudo
+          mintcard.app/u/ton-pseudo
         </span>
         <span className="rounded-full bg-accent px-3 py-1.5 text-xs font-semibold text-white">Copier</span>
       </div>

@@ -1,4 +1,4 @@
--- TenPoint — schéma initial (à exécuter dans Supabase SQL Editor)
+-- MintCard — schéma initial (à exécuter dans Supabase SQL Editor)
 
 create extension if not exists "pgcrypto";
 

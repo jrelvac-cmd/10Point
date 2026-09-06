@@ -1,4 +1,4 @@
-# TenPoint
+# MintCard
 
 Scan cartes Pokémon → identification IA → prix marché EUR → valeur de collection.
 
