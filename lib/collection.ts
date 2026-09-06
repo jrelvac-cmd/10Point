@@ -2,6 +2,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "./supabase/server";
 import {
   resolvePrice,
+  referenceValue,
+  isVolatile,
   variationFromHistory,
   VARIATION_WINDOW_DAYS,
   type CardPriceRow,
@@ -27,6 +29,8 @@ export type CollectionEntry = {
   unitPrice: number | null;
   lineValue: number | null;
   variation: PriceVariation | null;
+  /** Marché mince pour cette carte : la statistique du dernier jour s'écarte fortement de la référence. */
+  volatile: boolean;
 };
 
 type Row = {
@@ -102,7 +106,7 @@ async function loadCollection(
       : card.card_prices;
 
     const price = resolvePrice(priceRow, row.is_reverse);
-    const unitPrice = price.trend;
+    const unitPrice = referenceValue(price);
 
     return [
       {
@@ -123,19 +127,29 @@ async function loadCollection(
         },
         unitPrice,
         lineValue: unitPrice === null ? null : unitPrice * row.quantity,
+        // La variation suit la même base que le chiffre affiché : comparer un
+        // avant/après en tendance quand l'écran montre la moyenne 30 jours
+        // aurait remis le bruit qu'on vient d'en sortir.
         variation: variationFromHistory(
-          price.trend,
+          unitPrice,
           (history.get(card.id) ?? []).map((h) => ({
             date: h.date,
-            value: row.is_reverse ? h.reverse : h.trend,
+            value: row.is_reverse ? (h.reverseAvg30 ?? h.reverse) : (h.avg30 ?? h.trend),
           })),
         ),
+        volatile: isVolatile(price),
       },
     ];
   });
 }
 
-type HistoryRow = { date: string; trend: number | null; reverse: number | null };
+type HistoryRow = {
+  date: string;
+  trend: number | null;
+  reverse: number | null;
+  avg30: number | null;
+  reverseAvg30: number | null;
+};
 
 /** Instantanés quotidiens des cartes demandées, sur la fenêtre de variation. */
 async function loadHistory(
@@ -149,12 +163,18 @@ async function loadHistory(
     .slice(0, 10);
   const { data } = await supabase
     .from("price_history")
-    .select("card_id, snapshot_date, trend, reverse_trend")
+    .select("card_id, snapshot_date, trend, reverse_trend, avg30, reverse_avg30")
     .in("card_id", [...new Set(cardIds)])
     .gte("snapshot_date", floor);
   for (const h of data ?? []) {
     const list = map.get(h.card_id) ?? [];
-    list.push({ date: h.snapshot_date, trend: h.trend, reverse: h.reverse_trend });
+    list.push({
+      date: h.snapshot_date,
+      trend: h.trend,
+      reverse: h.reverse_trend,
+      avg30: h.avg30,
+      reverseAvg30: h.reverse_avg30,
+    });
     map.set(h.card_id, list);
   }
   return map;

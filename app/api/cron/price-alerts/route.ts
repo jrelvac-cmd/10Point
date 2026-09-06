@@ -3,6 +3,11 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { isCronAuthorized } from "@/lib/cron-auth";
 import { isPro, type Plan } from "@/lib/plans";
 import { formatEur } from "@/lib/pricing";
+
+/** Même base que le reste de l'app : la moyenne 30 jours, pas la tendance brute. */
+function reference(trend: number | null, avg30: number | null): number | null {
+  return avg30 ?? trend;
+}
 import { APP_NAME, APP_URL } from "@/lib/constants";
 
 export const maxDuration = 60;
@@ -67,10 +72,13 @@ export async function GET(request: Request) {
   const cardIds = [...new Set(owned.map((r) => r.card_id))];
 
   const [{ data: prices }, { data: history }, { data: sent }] = await Promise.all([
-    admin.from("card_prices").select("card_id, trend, reverse_trend").in("card_id", cardIds),
+    admin
+      .from("card_prices")
+      .select("card_id, trend, reverse_trend, avg30, reverse_avg30")
+      .in("card_id", cardIds),
     admin
       .from("price_history")
-      .select("card_id, trend, reverse_trend, snapshot_date")
+      .select("card_id, trend, reverse_trend, avg30, reverse_avg30, snapshot_date")
       .in("card_id", cardIds)
       .gte(
         "snapshot_date",
@@ -90,7 +98,10 @@ export async function GET(request: Request) {
   const current = new Map((prices ?? []).map((p) => [p.card_id as string, p]));
   // Référence = plus ancien relevé dans la fenêtre : la hausse se mesure sur
   // la durée, pas d'un jour à l'autre.
-  const baseline = new Map<string, { trend: number | null; reverse_trend: number | null }>();
+  const baseline = new Map<
+    string,
+    { trend: number | null; reverse_trend: number | null; avg30: number | null; reverse_avg30: number | null }
+  >();
   for (const h of history ?? []) {
     if (!baseline.has(h.card_id as string)) baseline.set(h.card_id as string, h);
   }
@@ -105,8 +116,12 @@ export async function GET(request: Request) {
     const then = baseline.get(row.card_id);
     if (!now || !then) continue;
 
-    const newPrice = row.is_reverse ? now.reverse_trend : now.trend;
-    const oldPrice = row.is_reverse ? then.reverse_trend : then.trend;
+    const newPrice = row.is_reverse
+      ? reference(now.reverse_trend, now.reverse_avg30)
+      : reference(now.trend, now.avg30);
+    const oldPrice = row.is_reverse
+      ? reference(then.reverse_trend, then.reverse_avg30)
+      : reference(then.trend, then.avg30);
     if (!newPrice || !oldPrice || oldPrice <= 0) continue;
 
     const ratio = (newPrice - oldPrice) / oldPrice;

@@ -41,18 +41,58 @@ export function extractPrices(card: TcgdexCard): CardPriceRow {
   };
 }
 
+export type ResolvedPrice = {
+  trend: number | null;
+  low: number | null;
+  avg1: number | null;
+  avg7: number | null;
+  avg30: number | null;
+};
+
 /**
  * Prix applicable selon la variante possédée. Cardmarket cote séparément la
  * version reverse ; le holo d'une carte ancienne EST la carte, il n'a donc pas
  * de cote distincte et retombe sur le prix principal.
  */
-export function resolvePrice(price: CardPriceRow | null, isReverse: boolean) {
-  if (!price) return { trend: null, low: null, avg30: null };
+export function resolvePrice(price: CardPriceRow | null, isReverse: boolean): ResolvedPrice {
+  if (!price) return { trend: null, low: null, avg1: null, avg7: null, avg30: null };
 
   if (isReverse && price.reverse_trend !== null) {
-    return { trend: price.reverse_trend, low: price.reverse_low, avg30: price.reverse_avg30 };
+    return {
+      trend: price.reverse_trend,
+      low: price.reverse_low,
+      avg1: price.reverse_avg1,
+      avg7: price.reverse_avg7,
+      avg30: price.reverse_avg30,
+    };
   }
-  return { trend: price.trend, low: price.low, avg30: price.avg30 };
+  return { trend: price.trend, low: price.low, avg1: price.avg1, avg7: price.avg7, avg30: price.avg30 };
+}
+
+/**
+ * Cote de référence : la moyenne 30 jours plutôt que la tendance brute.
+ *
+ * La « tendance » Cardmarket peut être tirée par une seule vente sur une
+ * carte peu liquide — une Raichu vue à 32 € un jour, 156 € quatre jours plus
+ * tard, sans qu'aucun collectionneur n'ait rien changé au marché. La moyenne
+ * 30 jours lisse ce bruit ; c'est elle qui valorise la collection et sert de
+ * chiffre qui engage. Repli sur la tendance seulement si l'historique est
+ * trop jeune pour avoir une moyenne 30 jours.
+ */
+export function referenceValue(price: ResolvedPrice): number | null {
+  return price.avg30 ?? price.trend;
+}
+
+/**
+ * Signale un marché mince pour cette carte plutôt qu'une erreur : la moyenne
+ * de la dernière journée s'éloigne fortement de la moyenne 30 jours, signe
+ * qu'une vente isolée pèse lourd sur la statistique. Sert à afficher un
+ * avertissement de lecture, jamais à cacher le prix.
+ */
+export function isVolatile(price: ResolvedPrice): boolean {
+  const ref = referenceValue(price);
+  if (ref === null || ref <= 0 || price.avg1 === null) return false;
+  return price.avg1 > ref * 3 || price.avg1 < ref / 3;
 }
 
 export type PriceVariation = {

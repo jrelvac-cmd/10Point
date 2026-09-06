@@ -5,7 +5,14 @@ import { extractCardFromImage } from "@/lib/anthropic";
 import { findCandidates, isUnambiguous, ebaySearchUrl, getSetInfo } from "@/lib/tcgdex";
 import { cacheCardAndPrices } from "@/lib/cards";
 import { canScan, remainingScans, type Plan } from "@/lib/plans";
-import { resolvePrice, variationFromHistory, extractPrices, VARIATION_WINDOW_DAYS } from "@/lib/pricing";
+import {
+  resolvePrice,
+  referenceValue,
+  isVolatile,
+  variationFromHistory,
+  extractPrices,
+  VARIATION_WINDOW_DAYS,
+} from "@/lib/pricing";
 
 export const maxDuration = 60;
 
@@ -140,7 +147,7 @@ export async function POST(request: Request) {
     shortlist[0].setId ? getSetInfo(shortlist[0].setId) : Promise.resolve({ releaseDate: null, abbreviation: null }),
     admin
       .from("price_history")
-      .select("snapshot_date, trend, reverse_trend")
+      .select("snapshot_date, trend, reverse_trend, avg30, reverse_avg30")
       .eq("card_id", shortlist[0].id)
       .gte("snapshot_date", floor),
   ]);
@@ -171,21 +178,25 @@ export async function POST(request: Request) {
       prices: {
         normal: {
           ...normal,
+          reference: referenceValue(normal),
+          volatile: isVolatile(normal),
           variation:
             index === 0
               ? variationFromHistory(
-                  normal.trend,
-                  history.map((h) => ({ date: h.snapshot_date, value: h.trend })),
+                  referenceValue(normal),
+                  history.map((h) => ({ date: h.snapshot_date, value: h.avg30 ?? h.trend })),
                 )
               : null,
         },
         reverse: {
           ...reverse,
+          reference: referenceValue(reverse),
+          volatile: isVolatile(reverse),
           variation:
             index === 0
               ? variationFromHistory(
-                  reverse.trend,
-                  history.map((h) => ({ date: h.snapshot_date, value: h.reverse_trend })),
+                  referenceValue(reverse),
+                  history.map((h) => ({ date: h.snapshot_date, value: h.reverse_avg30 ?? h.reverse_trend })),
                 )
               : null,
         },

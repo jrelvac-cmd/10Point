@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
+  AlertTriangle,
   ArrowLeft,
   Brain,
   Check,
@@ -31,6 +32,10 @@ type PriceSet = {
   trend: number | null;
   low: number | null;
   avg30: number | null;
+  /** Cote de référence (moyenne 30 j, repli sur la tendance) : le chiffre qui engage. */
+  reference: number | null;
+  /** Marché mince : la statistique du dernier jour s'écarte fortement de la référence. */
+  volatile: boolean;
   variation: { pct: number; days: number } | null;
 };
 
@@ -175,7 +180,7 @@ export function ScanClient({ isPro, plan, initials, quota, scansThisMonth }: Pro
         return;
       }
 
-      const unit = (isReverse ? selected.prices.reverse.trend : selected.prices.normal.trend) ?? 0;
+      const unit = (isReverse ? selected.prices.reverse.reference : selected.prices.normal.reference) ?? 0;
       setBulkCount((c) => c + 1);
       setBulkValue((v) => v + unit * quantity);
 
@@ -332,9 +337,9 @@ export function ScanClient({ isPro, plan, initials, quota, scansThisMonth }: Pro
         {selected && price && phase === "reveal" && (
           <RevealScene
             card={selected}
-            price={price.trend}
+            price={price.reference}
             shotUrl={shotUrl}
-            total={bulkMode ? bulkValue + (price.trend ?? 0) : null}
+            total={bulkMode ? bulkValue + (price.reference ?? 0) : null}
             onSkip={() => setPhase("details")}
           />
         )}
@@ -507,9 +512,9 @@ function CardPage({
           />
         </div>
         <div className="flex min-w-0 flex-1 flex-col items-center text-center">
-          <p className="text-sm font-bold text-text-primary">Tendance Cardmarket :</p>
+          <p className="text-sm font-bold text-text-primary">Cote de référence :</p>
           <p className="price-pop mt-1 leading-none">
-            <SplitPrice value={price.trend} />
+            <SplitPrice value={price.reference} />
           </p>
           {variation ? (
             <p className={cn("mt-1 text-sm font-bold", variation.pct >= 0 ? "text-up" : "text-down")}>
@@ -520,8 +525,13 @@ function CardPage({
             <p className="mt-1 text-[11px] text-text-muted">Variation : pas encore mesurée</p>
           )}
           <p className="mt-1 text-[11px] text-text-muted">
-            Moy. 30 j {formatEur(price.avg30)} · À partir de {formatEur(price.low)}
+            Tendance {formatEur(price.trend)} · À partir de {formatEur(price.low)}
           </p>
+          {price.volatile && (
+            <p className="mt-1 flex items-center gap-1 text-[11px] font-medium text-warn">
+              <AlertTriangle size={11} /> Marché mince : peu de ventes, prix à vérifier
+            </p>
+          )}
         </div>
       </section>
 

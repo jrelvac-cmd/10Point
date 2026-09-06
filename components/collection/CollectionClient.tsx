@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Trash2, Minus, Plus, SlidersHorizontal } from "lucide-react";
+import { Trash2, Minus, Plus, SlidersHorizontal, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatEur } from "@/lib/pricing";
 import type { CollectionEntry } from "@/lib/collection";
@@ -249,7 +249,14 @@ export function CollectionClient({
             </div>
 
             <div className="flex flex-col items-end gap-1">
-              <span className="text-sm font-bold text-text-primary">
+              <span className="flex items-center gap-1 text-sm font-bold text-text-primary">
+                {entry.volatile && (
+                  <AlertTriangle
+                    size={11}
+                    className="shrink-0 text-warn"
+                    aria-label="Marché mince : peu de ventes, prix à vérifier"
+                  />
+                )}
                 {formatEur(entry.lineValue)}
               </span>
               {entry.variation !== null && (
