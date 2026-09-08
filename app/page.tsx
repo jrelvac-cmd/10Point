@@ -17,6 +17,7 @@ import { FREE_SCANS_PER_MONTH, FREE_COLLECTION_LIMIT } from "@/lib/plans";
 import { cn } from "@/lib/utils";
 import { Reveal } from "@/components/marketing/Reveal";
 import { HeroShowcase } from "@/components/marketing/HeroShowcase";
+import { HeroSearch } from "@/components/marketing/HeroSearch";
 import { StepVisual, AxisVisual } from "@/components/marketing/LandingVisuals";
 import { Testimonials } from "@/components/marketing/Testimonials";
 
@@ -180,6 +181,10 @@ export default function LandingPage() {
                 <span className="text-sm font-semibold">iPhone &amp; Android</span>
               </span>
             </Link>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <p className="text-xs font-semibold text-text-muted">Une carte en tête ?</p>
+            <HeroSearch />
           </div>
           <p className="text-base text-text-secondary">
             <span className="text-lg font-extrabold text-text-primary">{FREE_SCANS_PER_MONTH} scans</span>{" "}

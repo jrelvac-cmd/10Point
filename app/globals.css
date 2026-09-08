@@ -394,7 +394,7 @@ html:has(.page-white) body {
  */
 .search-bar {
   position: relative;
-  background: linear-gradient(135deg, rgb(179, 208, 253) 0%, rgb(164, 202, 248) 100%);
+  background: linear-gradient(135deg, #c6c2f8 0%, #a8a1f2 100%);
   border-radius: 1000px;
   padding: 3px;
   z-index: 0;
@@ -402,7 +402,7 @@ html:has(.page-white) body {
 .search-bar-inner {
   position: relative;
   border-radius: 50px;
-  background: linear-gradient(135deg, rgb(218, 232, 247) 0%, rgb(214, 229, 247) 100%);
+  background: linear-gradient(135deg, #e3e1fb 0%, #dcd8fa 100%);
   padding: 3px;
   display: flex;
   align-items: center;
@@ -418,34 +418,34 @@ html:has(.page-white) body {
 .search-bar-inner::before {
   top: -1px;
   left: -1px;
-  background: linear-gradient(0deg, rgb(218, 232, 247) 0%, rgb(255, 255, 255) 100%);
+  background: linear-gradient(0deg, #e3e1fb 0%, #ffffff 100%);
   z-index: -1;
 }
 .search-bar-inner::after {
   bottom: -1px;
   right: -1px;
-  background: linear-gradient(0deg, rgb(163, 206, 255) 0%, rgb(211, 232, 255) 100%);
-  box-shadow: rgba(79, 156, 232, 0.7) 3px 3px 5px 0px, rgba(79, 156, 232, 0.7) 5px 5px 20px 0px;
+  background: linear-gradient(0deg, #b3aaf4 0%, #d6d1fa 100%);
+  box-shadow: rgba(79, 95, 230, 0.7) 3px 3px 5px 0px, rgba(79, 95, 230, 0.7) 5px 5px 20px 0px;
   z-index: -2;
 }
 .search-bar-input {
   padding: 8px 4px 8px 14px;
   width: 100%;
   min-width: 0;
-  background: linear-gradient(135deg, rgb(218, 232, 247) 0%, rgb(214, 229, 247) 100%);
+  background: linear-gradient(135deg, #e3e1fb 0%, #dcd8fa 100%);
   border: none;
-  color: #33507a;
+  color: #3a3487;
   font-size: 14px;
   font-weight: 600;
   border-radius: 50px;
 }
 .search-bar-input::placeholder {
-  color: #9ebcd9;
+  color: #a5b4fc;
   font-weight: 500;
 }
 .search-bar-input:focus {
   outline: none;
-  background: linear-gradient(135deg, rgb(239, 247, 255) 0%, rgb(214, 229, 247) 100%);
+  background: linear-gradient(135deg, #f2f1fe 0%, #dcd8fa 100%);
 }
 .search-bar-icon {
   width: 34px;
@@ -460,4 +460,39 @@ html:has(.page-white) body {
 }
 .search-bar-icon path {
   fill: white;
+}
+
+/*
+ * Même pastille, en grand : la « recherche » décorative du héros. Taille
+ * compacte par défaut (téléphone), taille pleine à partir du bureau — mêmes
+ * proportions que la maquette d'origine du fondateur (pastille 10px/5px,
+ * champ 20px, icône 50px).
+ */
+.hero-search {
+  max-width: 320px;
+}
+.hero-search .search-bar-input {
+  padding: 9px 6px 9px 16px;
+  font-size: 15px;
+}
+.hero-search .search-bar-icon {
+  width: 38px;
+  padding-left: 10px;
+}
+@media (min-width: 1024px) {
+  .hero-search {
+    padding: 6px;
+    max-width: 340px;
+  }
+  .hero-search .search-bar-inner {
+    padding: 5px;
+  }
+  .hero-search .search-bar-input {
+    padding: 10px 6px 10px 20px;
+    font-size: 20px;
+  }
+  .hero-search .search-bar-icon {
+    width: 50px;
+    padding-left: 12px;
+  }
 }
