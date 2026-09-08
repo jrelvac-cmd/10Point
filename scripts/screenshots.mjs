@@ -209,6 +209,18 @@ for (const name of ["home", "collection", "scan", "result", "public"]) {
   console.log(name, `${meta.width}x${meta.height}`, `${Math.round(fs.statSync(`${OUT}/${name}.webp`).size / 1024)} ko`);
 }
 
+// Détails agrandis, comme les vignettes zoomées des captures de store.
+const CROPS = {
+  "zoom-price": ["result", { left: 90, top: 1266, width: 985, height: 383 }],
+  "zoom-details": ["result", { left: 96, top: 1758, width: 973, height: 668 }],
+  "zoom-stats": ["home", { left: 122, top: 960, width: 920, height: 220 }],
+  "zoom-row": ["collection", { left: 60, top: 670, width: 1047, height: 288 }],
+};
+for (const [name, [from, region]] of Object.entries(CROPS)) {
+  await sharp(`${OUT}/${from}.webp`).extract(region).webp({ quality: 86 }).toFile(`${OUT}/${name}.webp`);
+  console.log("detail", name, `${region.width}x${region.height}`);
+}
+
 await admin.from("price_history").delete().eq("snapshot_date", HIST_DATE).in("card_id", ids);
 await admin.auth.admin.deleteUser(userId);
 console.log("releves retires, compte jetable supprime");

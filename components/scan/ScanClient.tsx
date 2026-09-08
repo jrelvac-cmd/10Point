@@ -544,7 +544,7 @@ function CardPage({
 
   return (
     <div className="flex flex-col gap-4 px-3 pb-6 pt-1">
-      <div className="card-reveal relative mx-auto w-[64%] max-w-[260px] overflow-hidden rounded-xl shadow-[0_18px_40px_rgba(20,25,90,0.35)]">
+      <div className="card-reveal relative mx-auto w-[64%] max-w-[260px] overflow-hidden rounded-xl">
         <Image
           src={card.image_large ?? ""}
           alt={card.name}
@@ -558,7 +558,7 @@ function CardPage({
       </div>
 
       <section className="glass-card-strong flex items-center gap-4 px-4 py-4">
-        <div className="w-[76px] shrink-0 overflow-hidden rounded-md shadow-inner">
+        <div className="w-[76px] shrink-0 overflow-hidden rounded-md">
           <Image
             src={card.image_large ?? ""}
             alt=""

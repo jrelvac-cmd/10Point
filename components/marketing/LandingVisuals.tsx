@@ -46,7 +46,7 @@ export function AxisVisual({ kind }: { kind: "price" | "moves" | "share" }) {
           src="/screenshots/result.webp"
           alt="Fiche d'une carte reconnue : Dracaufeu du Set de Base, cote de référence Cardmarket en euros, tendance et prix de départ"
           height={360}
-          className="w-[260px]"
+          width={260}
         />
         <p className="text-center text-[11px] text-text-muted">Capture réelle de l&apos;application.</p>
       </div>
@@ -59,7 +59,7 @@ export function AxisVisual({ kind }: { kind: "price" | "moves" | "share" }) {
           src="/screenshots/collection.webp"
           alt="Collection triée par variation : chaque carte avec sa cote et son évolution sur 30 jours"
           height={400}
-          className="w-[260px]"
+          width={260}
         />
         <p className="text-center text-[11px] text-text-muted">Capture réelle de l&apos;application.</p>
       </div>
@@ -71,7 +71,7 @@ export function AxisVisual({ kind }: { kind: "price" | "moves" | "share" }) {
         src="/screenshots/public.webp"
         alt="Page publique d'une collection : valeur totale, nombre de cartes et liste des cartes"
         height={360}
-        className="w-[260px]"
+        width={260}
       />
       <p className="text-[11px] text-text-muted">
         <Library size={12} className="mr-1 inline" />
