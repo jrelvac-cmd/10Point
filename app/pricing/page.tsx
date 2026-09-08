@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
-import { Check, Minus } from "lucide-react";
+import { Check, Minus, Sparkles, User, Users } from "lucide-react";
 import { getSessionUser } from "@/lib/auth";
 import { FREE_SCANS_PER_MONTH, FREE_COLLECTION_LIMIT } from "@/lib/plans";
 import { cn } from "@/lib/utils";
@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 type PricingPlan = {
   key: "monthly" | "yearly" | "lifetime" | null;
   name: string;
+  icon: React.ReactNode;
   price: string;
   period: string;
   trial?: string;
@@ -21,8 +22,10 @@ const PLANS: PricingPlan[] = [
   {
     key: null,
     name: "Free",
+    icon: null,
     price: "0 €",
     period: "",
+    note: "Pour découvrir l'app, sans engagement.",
     features: [
       { label: `${FREE_SCANS_PER_MONTH} scans par mois`, included: true },
       { label: `Collection jusqu'à ${FREE_COLLECTION_LIMIT} cartes`, included: true },
@@ -33,9 +36,11 @@ const PLANS: PricingPlan[] = [
   {
     key: "monthly",
     name: "Pro Mensuel",
+    icon: <User size={15} />,
     price: "3,99 €",
     period: "/mois",
     trial: "7 jours d'essai gratuit",
+    note: "Sans engagement, annulable à tout moment.",
     features: [
       { label: "Scans illimités", included: true },
       { label: "Collection illimitée", included: true },
@@ -46,10 +51,11 @@ const PLANS: PricingPlan[] = [
   {
     key: "yearly",
     name: "Pro Annuel",
+    icon: <Users size={15} />,
     price: "24,99 €",
     period: "/an",
     trial: "7 jours d'essai gratuit",
-    note: "Deux mois offerts par rapport au mensuel",
+    note: "Deux mois offerts par rapport au mensuel.",
     features: [
       { label: "Scans illimités", included: true },
       { label: "Collection illimitée", included: true },
@@ -60,10 +66,11 @@ const PLANS: PricingPlan[] = [
   {
     key: "lifetime",
     name: "Lifetime",
+    icon: <Sparkles size={15} />,
     price: "59,99 €",
     period: " une fois",
     highlight: true,
-    note: "Paye une fois, garde l'accès à vie",
+    note: "Paye une fois, garde l'accès à vie.",
     features: [
       { label: "Scans illimités", included: true },
       { label: "Collection illimitée", included: true },
@@ -82,11 +89,14 @@ export default async function PricingPage({
   const user = await getSessionUser();
 
   return (
-    <main className="flex-1 flex flex-col items-center gap-8 px-6 py-16">
-      <div className="text-center">
-        <h1 className="text-2xl font-bold text-text-primary">Choisis ton plan</h1>
-        <p className="mt-2 text-sm text-text-secondary">
-          Annulable en un clic, sans condition.
+    <main className="flex-1 flex flex-col items-center gap-12 px-6 py-16 sm:py-24">
+      <div className="flex max-w-xl flex-col items-center gap-3 text-center">
+        <h1 className="text-3xl font-semibold leading-tight tracking-tight text-text-primary sm:text-5xl">
+          Choisis ton plan
+        </h1>
+        <p className="text-md font-medium text-text-secondary sm:text-xl">
+          Scanne tes premières cartes gratuitement. Passe Pro quand ta
+          collection grandit — annulable en un clic, sans condition.
         </p>
       </div>
 
@@ -109,6 +119,11 @@ export default async function PricingPage({
           >
             <div>
               <div className="flex items-center gap-2">
+                {plan.icon && (
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-accent/15 text-accent-dark">
+                    {plan.icon}
+                  </span>
+                )}
                 <span className="text-sm font-medium text-text-secondary">
                   {plan.name}
                 </span>
@@ -118,12 +133,12 @@ export default async function PricingPage({
                   </span>
                 )}
               </div>
-              <p className="mt-2 font-semibold text-2xl text-text-primary">
+              <p className="mt-3 font-semibold text-3xl tracking-tight text-text-primary">
                 {plan.price}
-                <span className="text-sm text-text-muted">{plan.period}</span>
+                <span className="text-sm font-medium text-text-muted">{plan.period}</span>
               </p>
               {plan.trial && (
-                <p className="mt-1 text-[11px] text-up">{plan.trial}</p>
+                <p className="mt-1 text-[11px] font-semibold text-up">{plan.trial}</p>
               )}
               {plan.note && (
                 <p className="mt-1 text-[11px] text-text-muted">{plan.note}</p>
