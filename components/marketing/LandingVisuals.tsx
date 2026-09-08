@@ -1,37 +1,45 @@
-import Image from "next/image";
 import { Coins, Library } from "lucide-react";
 import { PhoneShot } from "./PhoneShot";
 
-const STEP_SHOTS = [
+const STEP_SHOTS: {
+  src: string;
+  alt: string;
+  full?: boolean;
+  height?: number;
+  align?: "top" | "bottom";
+}[] = [
   {
     src: "/screenshots/scan.webp",
     alt: "Le viseur reconnaît une carte Dracaufeu : coins verts et mention « Carte détectée »",
-    position: "50% 45%",
+    full: true,
   },
   {
     src: "/screenshots/result.webp",
     alt: "Fiche de la carte reconnue : Dracaufeu du Set de Base, cote de référence en euros",
-    position: "50% 30%",
+    height: 300,
+    align: "top",
   },
   {
     src: "/screenshots/home.webp",
     alt: "Tableau de bord : valeur totale de la collection, variation sur 30 jours, nombre de cartes",
-    position: "50% 10%",
+    height: 300,
+    align: "top",
   },
 ];
 
-/** Capture réelle de l'application, recadrée sur le moment de chaque étape. */
+/** Mockup iPhone sur la capture réelle de l'application, un par étape. */
 export function StepVisual({ index }: { index: number }) {
   const s = STEP_SHOTS[index];
   return (
-    <div className="relative aspect-[3/4] overflow-hidden rounded-2xl bg-[#e9ebf7]">
-      <Image
+    <div className="flex aspect-[3/4] items-center justify-center overflow-hidden rounded-2xl bg-[#e9ebf7]">
+      <PhoneShot
         src={s.src}
         alt={s.alt}
-        fill
-        sizes="(max-width: 768px) 90vw, 360px"
-        className="object-cover"
-        style={{ objectPosition: s.position }}
+        width={172}
+        height={s.height}
+        full={s.full}
+        align={s.align}
+        sizes="172px"
       />
     </div>
   );

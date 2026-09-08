@@ -1,11 +1,9 @@
 import Link from "next/link";
 import Image from "next/image";
 import {
-  ScanLine,
   TrendingUp,
   Check,
   Minus,
-  Sparkles,
   Share2,
   ShieldCheck,
   Euro,
@@ -39,17 +37,14 @@ const MARQUEE = [
 
 const STEPS = [
   {
-    icon: ScanLine,
     title: "Photographie",
     text: "Ouvre le scan, cadre la carte, appuie. Pas de formulaire, pas de recherche par nom.",
   },
   {
-    icon: Sparkles,
     title: "Reconnue en quelques secondes",
     text: "Nom, set, numéro et cote actuelle s'affichent. Un doute ? On te propose les cartes possibles.",
   },
   {
-    icon: TrendingUp,
     title: "Suis ce que vaut ta collection",
     text: "La valeur totale, ce qui monte, ce qui baisse, carte par carte, sur 30 jours.",
   },
@@ -233,18 +228,13 @@ export default function LandingPage() {
           </h2>
         </Reveal>
         <div className="mt-10 grid gap-5 md:grid-cols-3">
-          {STEPS.map(({ icon: Icon, title, text }, i) => (
+          {STEPS.map(({ title, text }, i) => (
             <Reveal key={title} delay={i * 130}>
               <div className="glass-card-strong flex h-full flex-col gap-4 px-5 py-6 transition-transform duration-300 hover:-translate-y-1">
                 <StepVisual index={i} />
-                <div className="flex items-center gap-2">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-white">
-                    <Icon size={16} />
-                  </span>
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-text-muted">
-                    Étape {i + 1}
-                  </span>
-                </div>
+                <span className="text-[11px] font-bold uppercase tracking-wider text-text-muted">
+                  Étape {i + 1}
+                </span>
                 <h3 className="text-lg font-bold text-text-primary">{title}</h3>
                 <p className="text-sm text-text-secondary">{text}</p>
               </div>
