@@ -8,6 +8,7 @@ import { Trash2, Minus, Plus, SlidersHorizontal, AlertTriangle } from "lucide-re
 import { cn } from "@/lib/utils";
 import { formatEur } from "@/lib/pricing";
 import type { CollectionEntry } from "@/lib/collection";
+import { SearchInput } from "./SearchInput";
 
 type SortKey = "added" | "value" | "name" | "variation";
 
@@ -37,6 +38,7 @@ export function CollectionClient({
   const [setFilter, setSetFilter] = useState("");
   const [rarityFilter, setRarityFilter] = useState("");
   const [variantFilter, setVariantFilter] = useState("");
+  const [nameFilter, setNameFilter] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
 
@@ -58,6 +60,7 @@ export function CollectionClient({
       if (variantFilter === "holo" && !i.isHolo) return false;
       if (variantFilter === "reverse" && !i.isReverse) return false;
       if (variantFilter === "normale" && (i.isHolo || i.isReverse)) return false;
+      if (nameFilter && !i.card.name.toLowerCase().includes(nameFilter.trim().toLowerCase())) return false;
       return true;
     });
 
@@ -74,10 +77,10 @@ export function CollectionClient({
           return b.addedAt.localeCompare(a.addedAt);
       }
     });
-  }, [items, sort, setFilter, rarityFilter, variantFilter]);
+  }, [items, sort, setFilter, rarityFilter, variantFilter, nameFilter]);
 
   const visibleValue = visible.reduce((sum, i) => sum + (i.lineValue ?? 0), 0);
-  const isFiltered = Boolean(setFilter || rarityFilter || variantFilter);
+  const isFiltered = Boolean(setFilter || rarityFilter || variantFilter || nameFilter);
 
   async function changeQuantity(entry: CollectionEntry, delta: number) {
     const next = entry.quantity + delta;
@@ -158,6 +161,12 @@ export function CollectionClient({
         </p>
       )}
 
+      <SearchInput
+        value={nameFilter}
+        onChange={setNameFilter}
+        placeholder="Rechercher une carte"
+      />
+
       <div className="flex flex-wrap items-center gap-2">
         <div className="pill-group">
           {SORTS.map((s) => (
@@ -207,6 +216,7 @@ export function CollectionClient({
                 setSetFilter("");
                 setRarityFilter("");
                 setVariantFilter("");
+                setNameFilter("");
               }}
               className="self-start text-xs text-accent-dark hover:underline"
             >

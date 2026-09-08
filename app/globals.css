@@ -386,3 +386,78 @@ html:has(.page-white) body {
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
+/*
+ * Barre de recherche, maquette fournie par le fondateur (pastille bleue en
+ * relief, dégradés superposés) : reproduite ici en CSS pur, sans
+ * styled-components, pour rester dans les conventions du projet.
+ */
+.search-bar {
+  position: relative;
+  background: linear-gradient(135deg, rgb(179, 208, 253) 0%, rgb(164, 202, 248) 100%);
+  border-radius: 1000px;
+  padding: 3px;
+  z-index: 0;
+}
+.search-bar-inner {
+  position: relative;
+  border-radius: 50px;
+  background: linear-gradient(135deg, rgb(218, 232, 247) 0%, rgb(214, 229, 247) 100%);
+  padding: 3px;
+  display: flex;
+  align-items: center;
+}
+.search-bar-inner::before,
+.search-bar-inner::after {
+  content: "";
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  position: absolute;
+}
+.search-bar-inner::before {
+  top: -1px;
+  left: -1px;
+  background: linear-gradient(0deg, rgb(218, 232, 247) 0%, rgb(255, 255, 255) 100%);
+  z-index: -1;
+}
+.search-bar-inner::after {
+  bottom: -1px;
+  right: -1px;
+  background: linear-gradient(0deg, rgb(163, 206, 255) 0%, rgb(211, 232, 255) 100%);
+  box-shadow: rgba(79, 156, 232, 0.7) 3px 3px 5px 0px, rgba(79, 156, 232, 0.7) 5px 5px 20px 0px;
+  z-index: -2;
+}
+.search-bar-input {
+  padding: 8px 4px 8px 14px;
+  width: 100%;
+  min-width: 0;
+  background: linear-gradient(135deg, rgb(218, 232, 247) 0%, rgb(214, 229, 247) 100%);
+  border: none;
+  color: #33507a;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 50px;
+}
+.search-bar-input::placeholder {
+  color: #9ebcd9;
+  font-weight: 500;
+}
+.search-bar-input:focus {
+  outline: none;
+  background: linear-gradient(135deg, rgb(239, 247, 255) 0%, rgb(214, 229, 247) 100%);
+}
+.search-bar-icon {
+  width: 34px;
+  aspect-ratio: 1;
+  flex-shrink: 0;
+  border-left: 2px solid white;
+  border-top: 3px solid transparent;
+  border-bottom: 3px solid transparent;
+  border-radius: 50%;
+  padding-left: 8px;
+  margin-right: 4px;
+}
+.search-bar-icon path {
+  fill: white;
+}
