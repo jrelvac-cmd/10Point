@@ -8,7 +8,7 @@ export function Testimonials() {
   return (
     <section className="mx-auto w-full max-w-5xl px-6 pb-20">
       <Reveal>
-        <h2 className="text-center text-3xl font-extrabold tracking-tight text-white drop-shadow-[0_2px_10px_rgba(28,33,96,0.4)]">
+        <h2 className="text-center text-3xl font-extrabold tracking-tight text-text-primary">
           Ce qu&apos;en disent les collectionneurs
         </h2>
       </Reveal>

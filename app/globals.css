@@ -384,3 +384,35 @@ h1 {
     --glass-blur-strong: 0px;
   }
 }
+
+/*
+ * Page publique : fond blanc plat, sans dégradé. Les surfaces givrées, faites
+ * pour se détacher du bleu, reçoivent ici un bord et un fond francs.
+ */
+html:has(.page-white) {
+  background: #fff;
+}
+html:has(.page-white) body {
+  background: #fff;
+}
+.page-white .glass-card,
+.page-white .glass-card-strong {
+  background: #fff;
+  border-color: rgba(27, 31, 59, 0.08);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+.page-white .glass-inner {
+  background: #f6f6fb;
+}
+.page-white .btn-secondary {
+  background: #fff;
+  box-shadow: var(--shadow-inner), inset 0 0 0 1px rgba(27, 31, 59, 0.1);
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}

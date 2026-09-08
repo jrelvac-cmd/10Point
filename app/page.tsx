@@ -12,13 +12,14 @@ import {
   ShieldCheck,
   Euro,
   ArrowRight,
+  Smartphone,
 } from "lucide-react";
 import { APP_NAME } from "@/lib/constants";
 import { FREE_SCANS_PER_MONTH, FREE_COLLECTION_LIMIT } from "@/lib/plans";
 import { cn } from "@/lib/utils";
 import { Reveal } from "@/components/marketing/Reveal";
 import { HoloCard } from "@/components/marketing/HoloCard";
-import { PhoneMockup } from "@/components/marketing/PhoneMockup";
+import { HeroShowcase } from "@/components/marketing/HeroShowcase";
 import { Testimonials } from "@/components/marketing/Testimonials";
 
 /**
@@ -138,7 +139,7 @@ const PLANS = [
 
 export default function LandingPage() {
   return (
-    <main className="flex-1 overflow-x-hidden">
+    <main className="page-white flex-1 overflow-x-hidden bg-white">
       <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-5">
         <Link href="/" className="flex items-center gap-2">
           <Image src="/icons/icon.svg" alt="" width={36} height={36} className="h-9 w-9" priority />
@@ -155,75 +156,55 @@ export default function LandingPage() {
       </header>
 
       {/* ---------------- Héros ---------------- */}
-      <section className="mx-auto grid w-full max-w-6xl items-center gap-10 px-6 pb-16 pt-8 lg:grid-cols-[1.05fr_0.95fr] lg:pt-14">
-        <div className="hero-enter flex flex-col items-start gap-5">
-          <span className="inline-flex items-center gap-2 rounded-full bg-white/80 px-3 py-1.5 text-xs font-semibold text-accent-dark shadow-inner">
-            <Sparkles size={14} /> Scan par photo · cotes Cardmarket en direct
-          </span>
-          <h1 className="text-4xl font-extrabold leading-[1.05] tracking-tight text-text-primary sm:text-5xl lg:text-6xl">
-            Ta collection Pokémon vaut peut-être{" "}
-            <span className="bg-gradient-to-r from-accent to-[#7c3aed] bg-clip-text text-transparent">
-              plus que tu ne crois.
-            </span>
+      <section className="mx-auto grid w-full max-w-6xl items-center gap-12 px-6 pb-16 pt-6 lg:grid-cols-[0.85fr_1.15fr] lg:gap-10 lg:pt-10">
+        <div className="hero-enter flex min-w-0 flex-col items-start gap-5">
+          <h1 className="text-[64px] font-black leading-none tracking-tight text-accent sm:text-[84px] lg:text-[80px] xl:text-[92px]">
+            {APP_NAME}
           </h1>
-          <p className="max-w-xl text-lg text-text-secondary">
-            Photographie une carte, obtiens sa vraie cote en euros, et suis la valeur de
-            toute ta collection au fil du marché.
+          <p className="text-2xl font-bold tracking-tight text-text-primary sm:text-3xl">
+            Le scanner de cartes Pokémon, en euros.
           </p>
-          <div className="flex flex-wrap items-center gap-3">
+          <p className="max-w-md text-lg leading-relaxed text-text-secondary">
+            Scanne tes cartes. Connais leur vraie cote. Suis la valeur de ta collection.
+          </p>
+          <div className="mt-1 flex flex-wrap items-center gap-3">
             <Link href="/login" className="btn-primary cta-glow px-7 py-4 text-base">
-              Scanner ma collection — gratuit <ArrowRight size={18} />
+              Scanner gratuitement <ArrowRight size={18} />
             </Link>
-            <Link href="#comment" className="btn-secondary px-5 py-4">
-              Voir comment ça marche
+            <Link
+              href="/login"
+              aria-label={`Ouvrir ${APP_NAME} sans installation, sur iPhone et Android`}
+              className="pressable inline-flex items-center gap-2.5 rounded-xl bg-[#111318] px-4 py-2.5 text-white"
+            >
+              <Smartphone size={22} />
+              <span className="flex flex-col leading-tight">
+                <span className="text-[10px] font-medium text-white/75">Sans installation</span>
+                <span className="text-sm font-semibold">iPhone &amp; Android</span>
+              </span>
             </Link>
           </div>
-          <ul className="flex flex-wrap gap-x-5 gap-y-2 text-xs text-text-secondary">
-            {[`${FREE_SCANS_PER_MONTH} scans offerts`, "Sans carte bancaire", "Prix Cardmarket, en €"].map(
-              (t) => (
-                <li key={t} className="flex items-center gap-1.5">
-                  <Check size={14} className="text-up" /> {t}
-                </li>
-              ),
-            )}
-          </ul>
+          <p className="text-base text-text-secondary">
+            <span className="text-lg font-extrabold text-text-primary">{FREE_SCANS_PER_MONTH} scans</span>{" "}
+            offerts chaque mois<span className="text-text-muted"> · sans carte bancaire</span>
+          </p>
+          <div className="flex items-center gap-4">
+            <div className="flex" aria-hidden>
+              {[18, 48, 268, 200, 340].map((hue, i) => (
+                <span
+                  key={hue}
+                  className={cn("h-11 w-8 rounded-md ring-[3px] ring-white", i > 0 && "-ml-3")}
+                  style={{ background: `hsl(${hue} 65% 52%)`, transform: `rotate(${(i - 2) * 4}deg)` }}
+                />
+              ))}
+            </div>
+            <p className="text-sm text-text-secondary">
+              Toutes les extensions françaises, cotées sur Cardmarket.
+            </p>
+          </div>
         </div>
 
-        <div className="relative mx-auto w-full max-w-[420px] lg:max-w-none">
-          <div className="relative mx-auto w-[260px] sm:w-[290px]">
-            <HoloCard
-              name="Dracaufeu"
-              set="Set de Base · 4/102"
-              price="533,88 €"
-              variation="+6,2 %"
-              hue={18}
-              tilt={-12}
-              className="absolute -left-10 top-8 z-10 w-[120px] sm:-left-32 sm:w-[150px]"
-            />
-            <HoloCard
-              name="Pikachu"
-              set="Set de Base · 58/102"
-              price="15,45 €"
-              variation="+80,5 %"
-              hue={48}
-              tilt={10}
-              delay={1.3}
-              className="absolute -right-10 top-24 z-10 w-[110px] sm:-right-32 sm:w-[140px]"
-            />
-            <HoloCard
-              name="Mewtwo"
-              set="Set de Base · 10/102"
-              price="98,20 €"
-              variation="−3,1 %"
-              hue={268}
-              tilt={16}
-              delay={2.4}
-              className="absolute -bottom-6 -right-4 z-10 w-[100px] sm:-right-24 sm:w-[125px]"
-            />
-            <div className="hero-enter [animation-delay:150ms]">
-              <PhoneMockup />
-            </div>
-          </div>
+        <div className="hero-enter min-w-0 [animation-delay:150ms]">
+          <HeroShowcase />
         </div>
       </section>
 
@@ -281,13 +262,13 @@ export default function LandingPage() {
           >
             <Reveal>
               <div className="flex flex-col items-start gap-4">
-                <span className="inline-flex items-center gap-2 rounded-full bg-white/80 px-3 py-1.5 text-xs font-semibold text-accent-dark shadow-inner">
+                <span className="inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1.5 text-xs font-semibold text-accent-dark">
                   <Icon size={14} /> {kicker}
                 </span>
-                <h2 className="text-3xl font-extrabold leading-tight tracking-tight text-white drop-shadow-[0_2px_10px_rgba(28,33,96,0.4)] lg:text-4xl">
+                <h2 className="text-3xl font-extrabold leading-tight tracking-tight text-text-primary lg:text-4xl">
                   {title}
                 </h2>
-                <p className="text-base text-white/85 drop-shadow">{text}</p>
+                <p className="text-base text-text-secondary">{text}</p>
                 <Link href="/login" className="btn-secondary mt-1">
                   Essayer gratuitement <ArrowRight size={16} />
                 </Link>
@@ -305,10 +286,10 @@ export default function LandingPage() {
       {/* ---------------- Tarifs ---------------- */}
       <section className="mx-auto w-full max-w-5xl px-6 pb-20">
         <Reveal>
-          <h2 className="text-center text-3xl font-extrabold tracking-tight text-white drop-shadow-[0_2px_10px_rgba(28,33,96,0.4)]">
+          <h2 className="text-center text-3xl font-extrabold tracking-tight text-text-primary">
             Des tarifs simples
           </h2>
-          <p className="mt-2 text-center text-sm text-white/80">
+          <p className="mt-2 text-center text-sm text-text-secondary">
             Commence gratuitement. Passe Pro quand ta collection grandit.
           </p>
         </Reveal>
@@ -372,7 +353,7 @@ export default function LandingPage() {
       {/* ---------------- FAQ ---------------- */}
       <section className="mx-auto w-full max-w-3xl px-6 pb-20">
         <Reveal>
-          <h2 className="mb-6 text-center text-3xl font-extrabold tracking-tight text-white drop-shadow-[0_2px_10px_rgba(28,33,96,0.4)]">
+          <h2 className="mb-6 text-center text-3xl font-extrabold tracking-tight text-text-primary">
             Questions fréquentes
           </h2>
         </Reveal>
@@ -435,7 +416,7 @@ export default function LandingPage() {
 function StepVisual({ index }: { index: number }) {
   if (index === 0) {
     return (
-      <div className="relative flex aspect-[4/3] items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-b from-[#2a2f5e] to-[#0f1340]">
+      <div className="relative flex aspect-[4/3] items-center justify-center overflow-hidden rounded-2xl bg-[#1a1f4b]">
         <div className="relative aspect-[63/88] h-[62%]">
           {["left-0 top-0 border-l-4 border-t-4 rounded-tl-lg", "right-0 top-0 border-r-4 border-t-4 rounded-tr-lg", "bottom-0 left-0 border-b-4 border-l-4 rounded-bl-lg", "bottom-0 right-0 border-b-4 border-r-4 rounded-br-lg"].map((c) => (
             <span key={c} className={cn("absolute h-5 w-5 border-white", c)} />
