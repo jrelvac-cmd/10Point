@@ -2,9 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import {
   ScanLine,
-  Coins,
   TrendingUp,
-  Library,
   Check,
   Minus,
   Sparkles,
@@ -18,8 +16,8 @@ import { APP_NAME } from "@/lib/constants";
 import { FREE_SCANS_PER_MONTH, FREE_COLLECTION_LIMIT } from "@/lib/plans";
 import { cn } from "@/lib/utils";
 import { Reveal } from "@/components/marketing/Reveal";
-import { HoloCard } from "@/components/marketing/HoloCard";
 import { HeroShowcase } from "@/components/marketing/HeroShowcase";
+import { StepVisual, AxisVisual } from "@/components/marketing/LandingVisuals";
 import { Testimonials } from "@/components/marketing/Testimonials";
 
 /**
@@ -412,148 +410,3 @@ export default function LandingPage() {
   );
 }
 
-/** Petite scène illustrant chaque étape, animée en boucle. */
-function StepVisual({ index }: { index: number }) {
-  if (index === 0) {
-    return (
-      <div className="relative flex aspect-[4/3] items-center justify-center overflow-hidden rounded-2xl bg-[#1a1f4b]">
-        <div className="relative aspect-[63/88] h-[62%]">
-          {["left-0 top-0 border-l-4 border-t-4 rounded-tl-lg", "right-0 top-0 border-r-4 border-t-4 rounded-tr-lg", "bottom-0 left-0 border-b-4 border-l-4 rounded-bl-lg", "bottom-0 right-0 border-b-4 border-r-4 rounded-br-lg"].map((c) => (
-            <span key={c} className={cn("absolute h-5 w-5 border-white", c)} />
-          ))}
-          <div className="absolute inset-2">
-            <HoloCard name="Dracaufeu" set="4/102" price="533,88 €" variation="+6,2 %" hue={18} className="w-full !animate-none !shadow-none" />
-          </div>
-        </div>
-        <span className="absolute bottom-3 left-1/2 flex h-9 w-9 -translate-x-1/2 items-center justify-center rounded-full bg-accent text-white shadow-[0_8px_20px_rgba(79,95,230,0.6)]">
-          <ScanLine size={16} />
-        </span>
-      </div>
-    );
-  }
-  if (index === 1) {
-    return (
-      <div className="glass-inner flex aspect-[4/3] items-center gap-3 px-4">
-        <div className="w-16 shrink-0">
-          <HoloCard name="Dracaufeu" set="4/102" price="" variation="+6,2 %" hue={18} className="w-full !animate-none" />
-        </div>
-        <div className="flex min-w-0 flex-col">
-          <span className="text-sm font-bold text-text-primary">Dracaufeu</span>
-          <span className="text-[11px] text-text-secondary">Set de Base · 4/102</span>
-          <span className="demo-price mt-1 text-2xl font-extrabold tracking-tight text-text-primary">
-            533,88 €
-          </span>
-          <span className="text-[11px] font-semibold text-up">+6,2 % sur 30 j</span>
-        </div>
-      </div>
-    );
-  }
-  return (
-    <div className="glass-inner flex aspect-[4/3] flex-col justify-center gap-3 px-4">
-      <div className="flex items-baseline justify-between">
-        <span className="text-[11px] text-text-secondary">Ma collection</span>
-        <span className="text-xl font-extrabold tracking-tight text-text-primary">1 284,50 €</span>
-      </div>
-      <div className="flex h-3 gap-1 overflow-hidden rounded-full">
-        <span className="w-[17%] rounded-full bg-gauge-down" />
-        <span className="w-[37%] rounded-full bg-gauge-stable shadow-inner" />
-        <span className="flex-1 rounded-full bg-gauge-up" />
-      </div>
-      <div className="flex justify-between text-[11px]">
-        <span className="text-down">4 en baisse</span>
-        <span className="text-text-muted">9 stables</span>
-        <span className="text-up">11 en hausse</span>
-      </div>
-      <span className="text-sm font-bold text-up">+96,40 € sur 30 jours</span>
-    </div>
-  );
-}
-
-/** Visuel de chaque axe marketing. */
-function AxisVisual({ kind }: { kind: "price" | "moves" | "share" }) {
-  if (kind === "price") {
-    return (
-      <div className="relative mx-auto grid max-w-md gap-3">
-        <div className="glass-card flex items-center justify-between px-5 py-4 opacity-70">
-          <div>
-            <p className="text-[11px] uppercase tracking-wide text-text-muted">Ailleurs</p>
-            <p className="text-sm text-text-secondary">Estimation, marché américain</p>
-          </div>
-          <span className="text-2xl font-bold text-text-muted line-through">$ 612</span>
-        </div>
-        <div className="glass-card-strong flex items-center justify-between px-5 py-5 ring-2 ring-accent/60">
-          <div>
-            <p className="text-[11px] font-bold uppercase tracking-wide text-accent-dark">{APP_NAME}</p>
-            <p className="text-sm text-text-secondary">Cote Cardmarket, tendance</p>
-          </div>
-          <span className="demo-price text-3xl font-extrabold tracking-tight text-text-primary">
-            533,88 €
-          </span>
-        </div>
-        <p className="text-center text-[11px] text-text-muted">Illustration, montants d&apos;exemple.</p>
-      </div>
-    );
-  }
-  if (kind === "moves") {
-    const rows = [
-      { n: "Pikachu", s: "58/102", p: "15,45 €", v: "+80,5 %", up: true },
-      { n: "Dracaufeu", s: "4/102", p: "533,88 €", v: "+6,2 %", up: true },
-      { n: "Drascore", s: "4/102", p: "2,43 €", v: "−39,9 %", up: false },
-      { n: "Feunnec", s: "25/162", p: "0,44 €", v: "+15,8 %", up: true },
-    ];
-    return (
-      <div className="glass-card-strong mx-auto flex max-w-md flex-col divide-y divide-black/5 px-4 py-2">
-        {rows.map((r, i) => (
-          <Reveal key={r.n} delay={i * 110} className="flex items-center gap-3 py-3">
-            <span className="min-w-0 flex-1 truncate text-sm font-semibold text-text-primary">{r.n}</span>
-            <span className="text-xs text-text-secondary">{r.s}</span>
-            <span className="flex w-[90px] flex-col items-end">
-              <span className="text-sm font-bold text-text-primary">{r.p}</span>
-              <span
-                className={cn(
-                  "rounded-full px-1.5 text-[11px] font-bold",
-                  r.up ? "bg-up/10 text-up" : "bg-down/10 text-down",
-                )}
-              >
-                {r.v}
-              </span>
-            </span>
-          </Reveal>
-        ))}
-      </div>
-    );
-  }
-  return (
-    <div className="mx-auto flex max-w-md flex-col gap-3">
-      <div className="pill-group w-fit">
-        {["Ajout", "Valeur", "Nom", "Variation"].map((s, i) => (
-          <span key={s} className={cn("pill", i === 1 && "pill-active")}>
-            {s}
-          </span>
-        ))}
-      </div>
-      <div className="flex flex-wrap gap-2">
-        {["Set de Base", "Holo", "Rare"].map((t) => (
-          <span key={t} className="rounded-full bg-accent/10 px-2.5 py-1 text-[11px] font-semibold text-accent-dark">
-            {t}
-          </span>
-        ))}
-      </div>
-      <div className="glass-card-strong flex items-center gap-3 px-4 py-3">
-        <Share2 size={18} className="shrink-0 text-accent-dark" />
-        <span className="min-w-0 flex-1 truncate text-sm font-semibold text-text-primary">
-          mintcard.fr/u/ton-pseudo
-        </span>
-        <span className="rounded-full bg-accent px-3 py-1.5 text-xs font-semibold text-white">Copier</span>
-      </div>
-      <p className="text-[11px] text-text-muted">
-        <Library size={12} className="mr-1 inline" />
-        Page publique en lecture seule : ni email, ni informations personnelles.
-      </p>
-      <p className="text-[11px] text-text-muted">
-        <Coins size={12} className="mr-1 inline" />
-        Les visiteurs voient les cotes, pas ton compte.
-      </p>
-    </div>
-  );
-}
