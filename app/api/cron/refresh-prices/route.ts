@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { isCronAuthorized } from "@/lib/cron-auth";
 import { getCardById } from "@/lib/tcgdex";
 import { cacheCardAndPrices } from "@/lib/cards";
+import { ebayConfigured, refreshFrPrice } from "@/lib/ebay";
 
 export const maxDuration = 60;
 
@@ -89,6 +90,8 @@ export async function GET(request: Request) {
         continue;
       }
       await cacheCardAndPrices(card);
+      // La cote francaise suit le meme rythme ; sans cles eBay, l appel est inerte.
+      if (ebayConfigured()) await refreshFrPrice(card);
       refreshed++;
     } catch {
       failed++;

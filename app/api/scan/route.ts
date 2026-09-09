@@ -4,15 +4,27 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { extractCardFromImage } from "@/lib/anthropic";
 import { findCandidates, isUnambiguous, ebaySearchUrl, getSetInfo } from "@/lib/tcgdex";
 import { cacheCardAndPrices } from "@/lib/cards";
+import { getFrPrice, toFrPrice, type FrPriceRow } from "@/lib/ebay";
 import { canScan, remainingScans, type Plan } from "@/lib/plans";
 import {
   resolvePrice,
   referenceValue,
+  pickReference,
   isVolatile,
   variationFromHistory,
   extractPrices,
   VARIATION_WINDOW_DAYS,
 } from "@/lib/pricing";
+
+/** eBay ne doit jamais retarder un scan au-delà de quelques secondes : passé ce délai, Cardmarket suffit. */
+const FR_PRICE_TIMEOUT_MS = 7_000;
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null> {
+  return Promise.race([
+    promise.catch(() => null),
+    new Promise<null>((resolve) => setTimeout(() => resolve(null), ms)),
+  ]);
+}
 
 export const maxDuration = 60;
 
@@ -142,19 +154,31 @@ export async function POST(request: Request) {
   // l'utilisateur en choisit un.
   // Les infos de set (date, abréviation) partent en parallèle de la mise en cache.
   const floor = new Date(Date.now() - VARIATION_WINDOW_DAYS * 86_400_000).toISOString().slice(0, 10);
-  const [topPrices, setInfo, historyRes] = await Promise.all([
+  const [topPrices, setInfo, frRow] = await Promise.all([
     cacheCardAndPrices(shortlist[0]),
     shortlist[0].setId ? getSetInfo(shortlist[0].setId) : Promise.resolve({ releaseDate: null, abbreviation: null }),
-    admin
-      .from("price_history")
-      .select(
-        "snapshot_date, trend, reverse_trend, avg30, reverse_avg30, first_edition_trend, first_edition_avg30",
-      )
-      .eq("card_id", shortlist[0].id)
-      .gte("snapshot_date", floor),
+    withTimeout<FrPriceRow | null>(getFrPrice(shortlist[0]), FR_PRICE_TIMEOUT_MS),
   ]);
+  // L'historique se lit après la mise en cache : la cote française du jour vient d'y être écrite.
+  const historyRes = await admin
+    .from("price_history")
+    .select(
+      "snapshot_date, trend, reverse_trend, avg30, reverse_avg30, first_edition_trend, first_edition_avg30, fr_price",
+    )
+    .eq("card_id", shortlist[0].id)
+    .gte("snapshot_date", floor);
   // Seul le candidat affiché a un historique : les autres ne sont pas en base.
-  const history = historyRes.data ?? [];
+  const history = (historyRes.data ?? []) as {
+    snapshot_date: string;
+    trend: number | null;
+    reverse_trend: number | null;
+    avg30: number | null;
+    reverse_avg30: number | null;
+    first_edition_trend: number | null;
+    first_edition_avg30: number | null;
+    fr_price: number | null;
+  }[];
+  const topFr = toFrPrice(frRow);
 
   const cards = shortlist.map((card, index) => {
     const prices = index === 0 ? topPrices : extractPrices(card);
@@ -181,14 +205,21 @@ export async function POST(request: Request) {
       prices: {
         normal: {
           ...normal,
-          reference: referenceValue(normal),
+          reference: index === 0 ? pickReference(normal, topFr?.price ?? null).value : referenceValue(normal),
+          source: index === 0 ? pickReference(normal, topFr?.price ?? null).source : "cardmarket",
+          fr: index === 0 ? topFr : null,
           volatile: isVolatile(normal),
           variation:
             index === 0
-              ? variationFromHistory(
-                  referenceValue(normal),
-                  history.map((h) => ({ date: h.snapshot_date, value: h.avg30 ?? h.trend })),
-                )
+              ? topFr
+                ? variationFromHistory(
+                    topFr.price,
+                    history.map((h) => ({ date: h.snapshot_date, value: h.fr_price })),
+                  )
+                : variationFromHistory(
+                    referenceValue(normal),
+                    history.map((h) => ({ date: h.snapshot_date, value: h.avg30 ?? h.trend })),
+                  )
               : null,
         },
         reverse: {

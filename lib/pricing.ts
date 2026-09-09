@@ -250,3 +250,22 @@ export function formatPct(value: number | null): string {
   const sign = value > 0 ? "+" : "";
   return `${sign}${value.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} %`;
 }
+
+/**
+ * Cote affichée : la cote française (eBay, carte FR brute en bon état) quand
+ * elle existe pour la carte telle qu'elle est possédée, sinon Cardmarket.
+ * eBay n'est lu que pour l'exemplaire courant : une reverse ou une 1re
+ * édition garde la cote Cardmarket de sa variante.
+ */
+export type ReferenceSource = "fr" | "cardmarket";
+
+export function pickReference(
+  price: ResolvedPrice,
+  frPrice: number | null | undefined,
+  variant: { reverse: boolean; firstEdition: boolean } = { reverse: false, firstEdition: false },
+): { value: number | null; source: ReferenceSource } {
+  if (frPrice != null && frPrice > 0 && !variant.reverse && !variant.firstEdition) {
+    return { value: frPrice, source: "fr" };
+  }
+  return { value: referenceValue(price), source: "cardmarket" };
+}

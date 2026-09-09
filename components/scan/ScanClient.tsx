@@ -33,8 +33,18 @@ type PriceSet = {
   trend: number | null;
   low: number | null;
   avg30: number | null;
-  /** Cote de référence (moyenne 30 j, repli sur la tendance) : le chiffre qui engage. */
+  /** Cote de référence : ventes eBay de la carte française si elles existent, sinon moyenne 30 j Cardmarket. */
   reference: number | null;
+  source?: "fr" | "cardmarket";
+  /** Cote « carte française, état 9/10 » et de quoi l'expliquer. */
+  fr?: {
+    price: number;
+    low: number | null;
+    high: number | null;
+    sampleCount: number;
+    source: "ebay_sold" | "ebay_active";
+    windowDays: number;
+  } | null;
   /** Marché mince : la statistique du dernier jour s'écarte fortement de la référence. */
   volatile: boolean;
   variation: { pct: number; days: number } | null;
@@ -596,9 +606,23 @@ function CardPage({
           ) : (
             <p className="mt-1 text-[11px] text-text-muted">Variation : pas encore mesurée</p>
           )}
-          <p className="mt-1 text-[11px] text-text-muted">
-            Tendance {formatEur(price.trend)} · À partir de {formatEur(price.low)}
-          </p>
+          {price.fr ? (
+            <p className="mt-1 text-[11px] text-text-muted">
+              <span className="font-semibold text-accent-dark">Carte française · état 9/10</span>
+              {" · "}
+              {price.fr.source === "ebay_sold"
+                ? `médiane de ${price.fr.sampleCount} ventes eBay sur ${price.fr.windowDays} j`
+                : `d'après ${price.fr.sampleCount} annonces eBay France`}
+              {price.fr.low !== null && price.fr.high !== null && (
+                <> · de {formatEur(price.fr.low)} à {formatEur(price.fr.high)}</>
+              )}
+            </p>
+          ) : (
+            <p className="mt-1 text-[11px] text-text-muted">
+              Cote Cardmarket, toutes langues · Tendance {formatEur(price.trend)} · À partir de{" "}
+              {formatEur(price.low)}
+            </p>
+          )}
           {price.volatile && (
             <p className="mt-1 flex items-center gap-1 text-[11px] font-medium text-warn">
               <AlertTriangle size={11} /> Marché mince : peu de ventes, prix à vérifier

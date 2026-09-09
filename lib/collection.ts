@@ -2,13 +2,15 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "./supabase/server";
 import {
   resolvePrice,
-  referenceValue,
+  pickReference,
   isVolatile,
   variationFromHistory,
   VARIATION_WINDOW_DAYS,
   type CardPriceRow,
   type PriceVariation,
+  type ReferenceSource,
 } from "./pricing";
+import { toFrPrice, type FrPriceRow } from "./ebay";
 
 export type CollectionEntry = {
   id: string;
@@ -28,6 +30,8 @@ export type CollectionEntry = {
     imageLarge: string | null;
   };
   unitPrice: number | null;
+  /** D'où vient le prix unitaire : ventes eBay de la carte française, ou guide Cardmarket. */
+  priceSource: ReferenceSource;
   lineValue: number | null;
   variation: PriceVariation | null;
   /** Marché mince pour cette carte : la statistique du dernier jour s'écarte fortement de la référence. */
@@ -94,10 +98,11 @@ async function loadCollection(
     .order("added_at", { ascending: false });
 
   const rows = (data ?? []) as unknown as Row[];
-  const history = await loadHistory(
-    supabase,
-    rows.flatMap((r) => (r.pokemon_cards ? [r.pokemon_cards.id] : [])),
-  );
+  const cardIds = rows.flatMap((r) => (r.pokemon_cards ? [r.pokemon_cards.id] : []));
+  const [history, frPrices] = await Promise.all([
+    loadHistory(supabase, cardIds),
+    loadFrPrices(supabase, cardIds),
+  ]);
 
   return rows.flatMap((row) => {
     const card = row.pokemon_cards;
@@ -108,7 +113,12 @@ async function loadCollection(
       : card.card_prices;
 
     const price = resolvePrice(priceRow, row.is_reverse, row.is_first_edition);
-    const unitPrice = referenceValue(price);
+    const fr = toFrPrice(frPrices.get(card.id));
+    const reference = pickReference(price, fr?.price ?? null, {
+      reverse: row.is_reverse,
+      firstEdition: row.is_first_edition,
+    });
+    const unitPrice = reference.value;
 
     return [
       {
@@ -129,6 +139,7 @@ async function loadCollection(
           imageLarge: card.image_large,
         },
         unitPrice,
+        priceSource: reference.source,
         lineValue: unitPrice === null ? null : unitPrice * row.quantity,
         // La variation suit la même base que le chiffre affiché : comparer un
         // avant/après en tendance quand l'écran montre la moyenne 30 jours
@@ -137,11 +148,14 @@ async function loadCollection(
           unitPrice,
           (history.get(card.id) ?? []).map((h) => ({
             date: h.date,
-            value: row.is_first_edition
-              ? (h.firstEditionAvg30 ?? h.firstEditionTrend)
-              : row.is_reverse
-                ? (h.reverseAvg30 ?? h.reverse)
-                : (h.avg30 ?? h.trend),
+            value:
+              reference.source === "fr"
+                ? h.frPrice
+                : row.is_first_edition
+                  ? (h.firstEditionAvg30 ?? h.firstEditionTrend)
+                  : row.is_reverse
+                    ? (h.reverseAvg30 ?? h.reverse)
+                    : (h.avg30 ?? h.trend),
           })),
         ),
         volatile: isVolatile(price),
@@ -158,7 +172,11 @@ type HistoryRow = {
   reverseAvg30: number | null;
   firstEditionTrend: number | null;
   firstEditionAvg30: number | null;
+  frPrice: number | null;
 };
+
+const HISTORY_COLUMNS =
+  "card_id, snapshot_date, trend, reverse_trend, avg30, reverse_avg30, first_edition_trend, first_edition_avg30";
 
 /** Instantanés quotidiens des cartes demandées, sur la fenêtre de variation. */
 async function loadHistory(
@@ -170,13 +188,22 @@ async function loadHistory(
   const floor = new Date(Date.now() - VARIATION_WINDOW_DAYS * 86_400_000)
     .toISOString()
     .slice(0, 10);
-  const { data } = await supabase
+  const ids = [...new Set(cardIds)];
+  let { data } = await supabase
     .from("price_history")
-    .select(
-      "card_id, snapshot_date, trend, reverse_trend, avg30, reverse_avg30, first_edition_trend, first_edition_avg30",
-    )
-    .in("card_id", [...new Set(cardIds)])
+    .select(`${HISTORY_COLUMNS}, fr_price`)
+    .in("card_id", ids)
     .gte("snapshot_date", floor);
+  // Tant que la migration 004 n'est pas passée, la colonne fr_price n'existe
+  // pas : la variation Cardmarket doit survivre à son absence.
+  if (!data) {
+    const fallback = await supabase
+      .from("price_history")
+      .select(HISTORY_COLUMNS)
+      .in("card_id", ids)
+      .gte("snapshot_date", floor);
+    data = (fallback.data ?? []).map((h) => ({ ...h, fr_price: null }));
+  }
   for (const h of data ?? []) {
     const list = map.get(h.card_id) ?? [];
     list.push({
@@ -187,8 +214,24 @@ async function loadHistory(
       reverseAvg30: h.reverse_avg30,
       firstEditionTrend: h.first_edition_trend,
       firstEditionAvg30: h.first_edition_avg30,
+      frPrice: h.fr_price,
     });
     map.set(h.card_id, list);
   }
+  return map;
+}
+
+/** Cotes françaises en cache. Table absente ou vide : aucune, et Cardmarket prend le relais. */
+async function loadFrPrices(
+  supabase: SupabaseClient,
+  cardIds: string[],
+): Promise<Map<string, FrPriceRow>> {
+  const map = new Map<string, FrPriceRow>();
+  if (!cardIds.length) return map;
+  const { data } = await supabase
+    .from("card_prices_fr")
+    .select("*")
+    .in("card_id", [...new Set(cardIds)]);
+  for (const row of (data ?? []) as FrPriceRow[]) map.set(row.card_id, row);
   return map;
 }

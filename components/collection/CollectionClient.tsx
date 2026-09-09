@@ -270,6 +270,14 @@ export function CollectionClient({
                 )}
                 {formatEur(entry.lineValue)}
               </span>
+              {entry.priceSource === "fr" && (
+                <span
+                  className="rounded-full bg-accent/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-accent-dark"
+                  title="Cote d'après les ventes eBay France d'une carte française, brute, en bon état"
+                >
+                  FR · état 9/10
+                </span>
+              )}
               {entry.variation !== null && (
                 <span
                   className={cn(
