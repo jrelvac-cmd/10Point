@@ -51,6 +51,8 @@ export async function cacheCardAndPrices(card: TcgdexCard) {
       avg30: prices.avg30,
       reverse_trend: prices.reverse_trend,
       reverse_avg30: prices.reverse_avg30,
+      first_edition_trend: prices.first_edition_trend,
+      first_edition_avg30: prices.first_edition_avg30,
       snapshot_date: new Date().toISOString().slice(0, 10),
     },
     { onConflict: "card_id,snapshot_date" },

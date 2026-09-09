@@ -17,6 +17,7 @@ export async function POST(request: Request) {
   const quantity = Number.isInteger(body?.quantity) ? Number(body.quantity) : 1;
   const isHolo = Boolean(body?.is_holo);
   const isReverse = Boolean(body?.is_reverse);
+  const isFirstEdition = Boolean(body?.is_first_edition);
 
   if (!cardId) {
     return NextResponse.json({ error: "MISSING_CARD_ID" }, { status: 400 });
@@ -43,6 +44,7 @@ export async function POST(request: Request) {
     .eq("card_id", cardId)
     .eq("is_holo", isHolo)
     .eq("is_reverse", isReverse)
+    .eq("is_first_edition", isFirstEdition)
     .maybeSingle();
 
   if (existing) {
@@ -82,6 +84,7 @@ export async function POST(request: Request) {
       quantity,
       is_holo: isHolo,
       is_reverse: isReverse,
+      is_first_edition: isFirstEdition,
     })
     .select("id, quantity")
     .single();

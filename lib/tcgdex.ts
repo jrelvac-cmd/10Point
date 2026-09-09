@@ -35,6 +35,9 @@ type RawCard = {
   set?: { id?: string; name?: string; cardCount?: { official?: number; total?: number } };
   variants?: Partial<CardVariants>;
   pricing?: { cardmarket?: Record<string, unknown> };
+  // La 1re édition n'est pas une colonne du prix principal : TCGdex la cote
+  // comme un produit Cardmarket à part, glissé dans ce tableau de variantes.
+  variants_detailed?: { stamp?: string[]; pricing?: { cardmarket?: Record<string, unknown> } }[];
 };
 
 type RawSummary = { id: string; localId: string; name: string; image?: string };
@@ -73,8 +76,20 @@ async function request<T>(path: string, attempts = 3): Promise<T | null> {
 const num = (v: unknown) =>
   typeof v === "number" && Number.isFinite(v) && v > 0 ? v : null;
 
+/**
+ * La 1re édition est un produit Cardmarket distinct de la version illimitée,
+ * pas un champ du prix principal : TCGdex la range dans les variantes
+ * détaillées, repérable à son tampon « 1re Édition ». Une carte peut avoir
+ * plusieurs entrées identiques (holo/non-holo) : la première suffit.
+ */
+function firstEditionCardmarket(raw: RawCard): Record<string, unknown> | null {
+  const variant = raw.variants_detailed?.find((v) => v.stamp?.includes("1re Édition"));
+  return variant?.pricing?.cardmarket ?? null;
+}
+
 function toCard(raw: RawCard): TcgdexCard {
   const cm = raw.pricing?.cardmarket ?? {};
+  const firstEditionCm = firstEditionCardmarket(raw);
   return {
     id: raw.id,
     localId: raw.localId,
@@ -105,6 +120,11 @@ function toCard(raw: RawCard): TcgdexCard {
       reverse_avg1: num(cm["avg1-holo"]),
       reverse_avg7: num(cm["avg7-holo"]),
       reverse_avg30: num(cm["avg30-holo"]),
+      first_edition_trend: num(firstEditionCm?.["trend"]),
+      first_edition_low: num(firstEditionCm?.["low"]),
+      first_edition_avg1: num(firstEditionCm?.["avg1"]),
+      first_edition_avg7: num(firstEditionCm?.["avg7"]),
+      first_edition_avg30: num(firstEditionCm?.["avg30"]),
     },
   };
 }

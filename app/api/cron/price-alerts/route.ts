@@ -38,6 +38,7 @@ type Owned = {
   user_id: string;
   card_id: string;
   is_reverse: boolean;
+  is_first_edition: boolean;
   profiles: { plan: string; notify_price_change: boolean; notify_threshold: string | null };
   pokemon_cards: { name: string; set_name: string | null; number: string | null };
 };
@@ -58,7 +59,7 @@ export async function GET(request: Request) {
   const { data: rows, error } = await admin
     .from("collection_items")
     .select(
-      "user_id, card_id, is_reverse, profiles!inner(plan, notify_price_change, notify_threshold), pokemon_cards!inner(name, set_name, number)",
+      "user_id, card_id, is_reverse, is_first_edition, profiles!inner(plan, notify_price_change, notify_threshold), pokemon_cards!inner(name, set_name, number)",
     )
     .eq("profiles.notify_price_change", true);
 
@@ -74,11 +75,13 @@ export async function GET(request: Request) {
   const [{ data: prices }, { data: history }, { data: sent }] = await Promise.all([
     admin
       .from("card_prices")
-      .select("card_id, trend, reverse_trend, avg30, reverse_avg30")
+      .select("card_id, trend, reverse_trend, avg30, reverse_avg30, first_edition_trend, first_edition_avg30")
       .in("card_id", cardIds),
     admin
       .from("price_history")
-      .select("card_id, trend, reverse_trend, avg30, reverse_avg30, snapshot_date")
+      .select(
+        "card_id, trend, reverse_trend, avg30, reverse_avg30, first_edition_trend, first_edition_avg30, snapshot_date",
+      )
       .in("card_id", cardIds)
       .gte(
         "snapshot_date",
@@ -100,7 +103,14 @@ export async function GET(request: Request) {
   // la durée, pas d'un jour à l'autre.
   const baseline = new Map<
     string,
-    { trend: number | null; reverse_trend: number | null; avg30: number | null; reverse_avg30: number | null }
+    {
+      trend: number | null;
+      reverse_trend: number | null;
+      avg30: number | null;
+      reverse_avg30: number | null;
+      first_edition_trend: number | null;
+      first_edition_avg30: number | null;
+    }
   >();
   for (const h of history ?? []) {
     if (!baseline.has(h.card_id as string)) baseline.set(h.card_id as string, h);
@@ -116,12 +126,16 @@ export async function GET(request: Request) {
     const then = baseline.get(row.card_id);
     if (!now || !then) continue;
 
-    const newPrice = row.is_reverse
-      ? reference(now.reverse_trend, now.reverse_avg30)
-      : reference(now.trend, now.avg30);
-    const oldPrice = row.is_reverse
-      ? reference(then.reverse_trend, then.reverse_avg30)
-      : reference(then.trend, then.avg30);
+    const newPrice = row.is_first_edition
+      ? reference(now.first_edition_trend, now.first_edition_avg30)
+      : row.is_reverse
+        ? reference(now.reverse_trend, now.reverse_avg30)
+        : reference(now.trend, now.avg30);
+    const oldPrice = row.is_first_edition
+      ? reference(then.first_edition_trend, then.first_edition_avg30)
+      : row.is_reverse
+        ? reference(then.reverse_trend, then.reverse_avg30)
+        : reference(then.trend, then.avg30);
     if (!newPrice || !oldPrice || oldPrice <= 0) continue;
 
     const ratio = (newPrice - oldPrice) / oldPrice;

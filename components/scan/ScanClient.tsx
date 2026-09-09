@@ -53,7 +53,7 @@ type ScannedCard = {
   image_large: string | null;
   ebay_url: string;
   variants: { normal: boolean; holo: boolean; reverse: boolean; firstEdition: boolean };
-  prices: { normal: PriceSet; reverse: PriceSet };
+  prices: { normal: PriceSet; reverse: PriceSet; firstEdition: PriceSet };
 };
 
 type Props = {
@@ -99,6 +99,7 @@ export function ScanClient({ isPro, plan, initials, quota, scansThisMonth }: Pro
   const [shotUrl, setShotUrl] = useState<string | null>(null);
   const [isHolo, setIsHolo] = useState(false);
   const [isReverse, setIsReverse] = useState(false);
+  const [isFirstEdition, setIsFirstEdition] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
   const [scansLeft, setScansLeft] = useState<number | null>(
@@ -129,6 +130,7 @@ export function ScanClient({ isPro, plan, initials, quota, scansThisMonth }: Pro
     setSelected(null);
     setIsHolo(false);
     setIsReverse(false);
+    setIsFirstEdition(false);
     setQuantity(1);
     setAdded(false);
     setError(null);
@@ -186,6 +188,7 @@ export function ScanClient({ isPro, plan, initials, quota, scansThisMonth }: Pro
           quantity,
           is_holo: isHolo,
           is_reverse: isReverse,
+          is_first_edition: isFirstEdition,
         }),
       });
       const json = await res.json().catch(() => ({}));
@@ -195,7 +198,7 @@ export function ScanClient({ isPro, plan, initials, quota, scansThisMonth }: Pro
         return;
       }
 
-      const unit = (isReverse ? selected.prices.reverse.reference : selected.prices.normal.reference) ?? 0;
+      const unit = price?.reference ?? 0;
       setBulkCount((c) => c + 1);
       setBulkValue((v) => v + unit * quantity);
       navigator.vibrate?.(12);
@@ -216,7 +219,13 @@ export function ScanClient({ isPro, plan, initials, quota, scansThisMonth }: Pro
     else then();
   }
 
-  const price = selected ? (isReverse ? selected.prices.reverse : selected.prices.normal) : null;
+  const price = selected
+    ? isFirstEdition
+      ? selected.prices.firstEdition
+      : isReverse
+        ? selected.prices.reverse
+        : selected.prices.normal
+    : null;
   const bulkFull = bulkMode && bulkCount >= BULK_SESSION_MAX;
 
   function toggleBurst() {
@@ -392,6 +401,7 @@ export function ScanClient({ isPro, plan, initials, quota, scansThisMonth }: Pro
               price={price}
               isHolo={isHolo}
               isReverse={isReverse}
+              isFirstEdition={isFirstEdition}
               quantity={quantity}
               added={added}
               loading={loading}
@@ -400,6 +410,7 @@ export function ScanClient({ isPro, plan, initials, quota, scansThisMonth }: Pro
               hasAlternatives={(candidates?.length ?? 0) > 1}
               onHolo={() => setIsHolo(!isHolo)}
               onReverse={() => setIsReverse(!isReverse)}
+              onFirstEdition={() => setIsFirstEdition(!isFirstEdition)}
               onQuantity={setQuantity}
               onAdd={handleAdd}
               onReset={() => closeSheet(reset)}
@@ -508,6 +519,7 @@ function CardPage({
   price,
   isHolo,
   isReverse,
+  isFirstEdition,
   quantity,
   added,
   loading,
@@ -516,6 +528,7 @@ function CardPage({
   hasAlternatives,
   onHolo,
   onReverse,
+  onFirstEdition,
   onQuantity,
   onAdd,
   onReset,
@@ -525,6 +538,7 @@ function CardPage({
   price: PriceSet;
   isHolo: boolean;
   isReverse: boolean;
+  isFirstEdition: boolean;
   quantity: number;
   added: boolean;
   loading: boolean;
@@ -533,6 +547,7 @@ function CardPage({
   hasAlternatives: boolean;
   onHolo: () => void;
   onReverse: () => void;
+  onFirstEdition: () => void;
   onQuantity: (q: number) => void;
   onAdd: (thenNext: boolean) => void;
   onReset: () => void;
@@ -630,11 +645,14 @@ function CardPage({
           ci-dessous ce que tu possèdes.
         </p>
 
-        {(card.variants?.holo || card.variants?.reverse) && (
+        {(card.variants?.holo || card.variants?.reverse || card.variants?.firstEdition) && (
           <div className="flex flex-wrap gap-2">
             {card.variants?.holo && <Toggle label="Holo" active={isHolo} onClick={onHolo} />}
             {card.variants?.reverse && (
               <Toggle label="Reverse" active={isReverse} onClick={onReverse} />
+            )}
+            {card.variants?.firstEdition && (
+              <Toggle label="1re Édition" active={isFirstEdition} onClick={onFirstEdition} />
             )}
           </div>
         )}

@@ -255,6 +255,7 @@ export function CollectionClient({
               <div className="mt-1 flex flex-wrap gap-1">
                 {entry.isHolo && <Tag>Holo</Tag>}
                 {entry.isReverse && <Tag>Reverse</Tag>}
+                {entry.isFirstEdition && <Tag>1re Édition</Tag>}
               </div>
             </div>
 

@@ -15,6 +15,7 @@ export type CollectionEntry = {
   quantity: number;
   isHolo: boolean;
   isReverse: boolean;
+  isFirstEdition: boolean;
   addedAt: string;
   card: {
     id: string;
@@ -38,6 +39,7 @@ type Row = {
   quantity: number;
   is_holo: boolean;
   is_reverse: boolean;
+  is_first_edition: boolean;
   added_at: string;
   pokemon_cards: {
     id: string;
@@ -83,7 +85,7 @@ async function loadCollection(
   const { data } = await supabase
     .from("collection_items")
     .select(
-      `id, quantity, is_holo, is_reverse, added_at,
+      `id, quantity, is_holo, is_reverse, is_first_edition, added_at,
        pokemon_cards ( id, name, name_fr, set_name, number, set_printed_total,
                        rarity, image_small, image_large,
                        card_prices ( * ) )`,
@@ -105,7 +107,7 @@ async function loadCollection(
       ? (card.card_prices[0] ?? null)
       : card.card_prices;
 
-    const price = resolvePrice(priceRow, row.is_reverse);
+    const price = resolvePrice(priceRow, row.is_reverse, row.is_first_edition);
     const unitPrice = referenceValue(price);
 
     return [
@@ -114,6 +116,7 @@ async function loadCollection(
         quantity: row.quantity,
         isHolo: row.is_holo,
         isReverse: row.is_reverse,
+        isFirstEdition: row.is_first_edition,
         addedAt: row.added_at,
         card: {
           id: card.id,
@@ -134,7 +137,11 @@ async function loadCollection(
           unitPrice,
           (history.get(card.id) ?? []).map((h) => ({
             date: h.date,
-            value: row.is_reverse ? (h.reverseAvg30 ?? h.reverse) : (h.avg30 ?? h.trend),
+            value: row.is_first_edition
+              ? (h.firstEditionAvg30 ?? h.firstEditionTrend)
+              : row.is_reverse
+                ? (h.reverseAvg30 ?? h.reverse)
+                : (h.avg30 ?? h.trend),
           })),
         ),
         volatile: isVolatile(price),
@@ -149,6 +156,8 @@ type HistoryRow = {
   reverse: number | null;
   avg30: number | null;
   reverseAvg30: number | null;
+  firstEditionTrend: number | null;
+  firstEditionAvg30: number | null;
 };
 
 /** Instantanés quotidiens des cartes demandées, sur la fenêtre de variation. */
@@ -163,7 +172,9 @@ async function loadHistory(
     .slice(0, 10);
   const { data } = await supabase
     .from("price_history")
-    .select("card_id, snapshot_date, trend, reverse_trend, avg30, reverse_avg30")
+    .select(
+      "card_id, snapshot_date, trend, reverse_trend, avg30, reverse_avg30, first_edition_trend, first_edition_avg30",
+    )
     .in("card_id", [...new Set(cardIds)])
     .gte("snapshot_date", floor);
   for (const h of data ?? []) {
@@ -174,6 +185,8 @@ async function loadHistory(
       reverse: h.reverse_trend,
       avg30: h.avg30,
       reverseAvg30: h.reverse_avg30,
+      firstEditionTrend: h.first_edition_trend,
+      firstEditionAvg30: h.first_edition_avg30,
     });
     map.set(h.card_id, list);
   }

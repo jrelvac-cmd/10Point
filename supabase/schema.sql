@@ -56,6 +56,11 @@ create table card_prices (
   reverse_avg1 numeric(10,2),
   reverse_avg7 numeric(10,2),
   reverse_avg30 numeric(10,2),
+  first_edition_trend numeric(10,2),
+  first_edition_low numeric(10,2),
+  first_edition_avg1 numeric(10,2),
+  first_edition_avg7 numeric(10,2),
+  first_edition_avg30 numeric(10,2),
   cached_at timestamptz not null default now(),
   expires_at timestamptz not null default now() + interval '24 hours'
 );
@@ -68,6 +73,8 @@ create table price_history (
   avg30 numeric(10,2),
   reverse_trend numeric(10,2),
   reverse_avg30 numeric(10,2),
+  first_edition_trend numeric(10,2),
+  first_edition_avg30 numeric(10,2),
   snapshot_date date not null default current_date,
   unique (card_id, snapshot_date)
 );
@@ -83,8 +90,9 @@ create table collection_items (
   condition text not null default 'NM' check (condition in ('NM', 'LP', 'MP', 'HP')),
   is_holo boolean not null default false,
   is_reverse boolean not null default false,
+  is_first_edition boolean not null default false,
   added_at timestamptz not null default now(),
-  unique (user_id, card_id, is_holo, is_reverse)
+  unique (user_id, card_id, is_holo, is_reverse, is_first_edition)
 );
 
 create index collection_items_user_id_idx on collection_items (user_id);

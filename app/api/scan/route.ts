@@ -147,7 +147,9 @@ export async function POST(request: Request) {
     shortlist[0].setId ? getSetInfo(shortlist[0].setId) : Promise.resolve({ releaseDate: null, abbreviation: null }),
     admin
       .from("price_history")
-      .select("snapshot_date, trend, reverse_trend, avg30, reverse_avg30")
+      .select(
+        "snapshot_date, trend, reverse_trend, avg30, reverse_avg30, first_edition_trend, first_edition_avg30",
+      )
       .eq("card_id", shortlist[0].id)
       .gte("snapshot_date", floor),
   ]);
@@ -158,6 +160,7 @@ export async function POST(request: Request) {
     const prices = index === 0 ? topPrices : extractPrices(card);
     const normal = resolvePrice(prices, false);
     const reverse = resolvePrice(prices, true);
+    const firstEdition = resolvePrice(prices, false, true);
     return {
       id: card.id,
       name: card.name,
@@ -197,6 +200,21 @@ export async function POST(request: Request) {
               ? variationFromHistory(
                   referenceValue(reverse),
                   history.map((h) => ({ date: h.snapshot_date, value: h.reverse_avg30 ?? h.reverse_trend })),
+                )
+              : null,
+        },
+        firstEdition: {
+          ...firstEdition,
+          reference: referenceValue(firstEdition),
+          volatile: isVolatile(firstEdition),
+          variation:
+            index === 0
+              ? variationFromHistory(
+                  referenceValue(firstEdition),
+                  history.map((h) => ({
+                    date: h.snapshot_date,
+                    value: h.first_edition_avg30 ?? h.first_edition_trend,
+                  })),
                 )
               : null,
         },

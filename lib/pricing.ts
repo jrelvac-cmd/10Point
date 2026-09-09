@@ -12,6 +12,11 @@ export type CardPriceRow = {
   reverse_avg1: number | null;
   reverse_avg7: number | null;
   reverse_avg30: number | null;
+  first_edition_trend: number | null;
+  first_edition_low: number | null;
+  first_edition_avg1: number | null;
+  first_edition_avg7: number | null;
+  first_edition_avg30: number | null;
 };
 
 const round2 = (v: number | null | undefined) =>
@@ -38,6 +43,11 @@ export function extractPrices(card: TcgdexCard): CardPriceRow {
     reverse_avg1: round2(cm.reverse_avg1),
     reverse_avg7: round2(cm.reverse_avg7),
     reverse_avg30: round2(cm.reverse_avg30),
+    first_edition_trend: round2(cm.first_edition_trend),
+    first_edition_low: round2(cm.first_edition_low),
+    first_edition_avg1: round2(cm.first_edition_avg1),
+    first_edition_avg7: round2(cm.first_edition_avg7),
+    first_edition_avg30: round2(cm.first_edition_avg30),
   };
 }
 
@@ -51,12 +61,28 @@ export type ResolvedPrice = {
 
 /**
  * Prix applicable selon la variante possédée. Cardmarket cote séparément la
- * version reverse ; le holo d'une carte ancienne EST la carte, il n'a donc pas
- * de cote distincte et retombe sur le prix principal.
+ * version reverse et la 1re édition, chacune comme un produit à part ; le
+ * holo d'une carte ancienne EST la carte, il n'a donc pas de cote distincte
+ * et retombe sur le prix principal. Une 1re édition l'emporte sur le reverse
+ * quand les deux sont cochés : c'est le tampon le plus rare, et Cardmarket
+ * ne cote pas la combinaison séparément.
  */
-export function resolvePrice(price: CardPriceRow | null, isReverse: boolean): ResolvedPrice {
+export function resolvePrice(
+  price: CardPriceRow | null,
+  isReverse: boolean,
+  isFirstEdition = false,
+): ResolvedPrice {
   if (!price) return { trend: null, low: null, avg1: null, avg7: null, avg30: null };
 
+  if (isFirstEdition && price.first_edition_trend !== null) {
+    return {
+      trend: price.first_edition_trend,
+      low: price.first_edition_low,
+      avg1: price.first_edition_avg1,
+      avg7: price.first_edition_avg7,
+      avg30: price.first_edition_avg30,
+    };
+  }
   if (isReverse && price.reverse_trend !== null) {
     return {
       trend: price.reverse_trend,
