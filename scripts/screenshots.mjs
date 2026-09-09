@@ -16,6 +16,7 @@ for (const line of fs.readFileSync(".env.local", "utf8").split("\n")) {
 
 const BASE = "http://localhost:3000";
 const OUT = "public/screenshots";
+const CARD_FILE = "public/_shot-card.jpg";
 const EMAIL = "captures@example.com";
 const PASSWORD = "Captures-1234";
 const USERNAME = "sacha";
@@ -58,17 +59,37 @@ console.log("compte", EMAIL, "pseudo", profile.username, "cartes", ITEMS.length)
 const HIST_DATE = new Date(Date.now() - 30 * 86_400_000).toISOString().slice(0, 10);
 const GROWTH = { "base1-4": 0.12, "ecard1-25": 0.36, "ex5-4": -0.06, "sm9-14": 0.09, "base1-58": 0.22, "hgss4-4": 0.02, "xy8-25": 0.12, "bw3-4": -0.04, };
 const ids = ITEMS.map((i) => i.card_id);
-const { data: prices } = await admin.from("card_prices").select("card_id, trend, reverse_trend").in("card_id", ids);
-const rows = prices.map((p) => ({ card_id: p.card_id, snapshot_date: HIST_DATE, trend: p.trend == null ? null : +(p.trend / (1 + GROWTH[p.card_id])).toFixed(2), reverse_trend: p.reverse_trend == null ? null : +(p.reverse_trend / (1 + GROWTH[p.card_id])).toFixed(2) }));
+
+// Cote de vitrine : le fondateur veut voir le Dracaufeu du Set de Base a 1 349 EUR sur
+// la page publique. La vraie ligne est sauvegardee et remise en place a la fin, quoi qu il arrive.
+// Le scan reel rafraichit la cote depuis TCGdex : la vitrine est reposee apres lui.
+const SHOWCASE_PRICES = {
+  "base1-4": { trend: 1305.4, low: 980, avg1: 1349, avg7: 1322.1, avg30: 1349 },
+};
+const savedPrices = [];
+for (const [cardId] of Object.entries(SHOWCASE_PRICES)) {
+  const { data: row } = await admin.from("card_prices").select("card_id, trend, low, avg1, avg7, avg30").eq("card_id", cardId).single();
+  if (row) savedPrices.push(row);
+}
+async function applyShowcase() {
+  for (const [cardId, values] of Object.entries(SHOWCASE_PRICES)) {
+    await admin.from("card_prices").update(values).eq("card_id", cardId);
+  }
+}
+await applyShowcase();
+console.log("cotes de vitrine posees :", Object.keys(SHOWCASE_PRICES).join(", "));
+const { data: prices } = await admin.from("card_prices").select("card_id, trend, avg30, reverse_trend").in("card_id", ids);
+const rows = prices.map((p) => ({ card_id: p.card_id, snapshot_date: HIST_DATE, trend: p.trend == null ? null : +(p.trend / (1 + GROWTH[p.card_id])).toFixed(2), avg30: p.avg30 == null ? null : +(p.avg30 / (1 + GROWTH[p.card_id])).toFixed(2), reverse_trend: p.reverse_trend == null ? null : +(p.reverse_trend / (1 + GROWTH[p.card_id])).toFixed(2) }));
 // Cotes marquees fraiches pour la capture : sans le pictogramme « cote a rafraichir ».
 await admin.from("card_prices").update({ cached_at: new Date().toISOString(), expires_at: new Date(Date.now() + 86_400_000).toISOString() }).in("card_id", ids);
+
+try {
 const { error: histErr } = await admin.from("price_history").insert(rows);
 if (histErr) throw histErr;
 console.log("releves inseres", rows.length, "au", HIST_DATE);
 
 fs.mkdirSync(OUT, { recursive: true });
 // Carte présentée à la fausse caméra, servie par le serveur de dev le temps des captures.
-const CARD_FILE = "public/_shot-card.jpg";
 fs.writeFileSync(CARD_FILE, Buffer.from(await (await fetch("https://assets.tcgdex.net/fr/base/base1/4/high.jpg")).arrayBuffer()));
 const browser = await chromium.launch({ channel: "msedge", headless: true, args: ["--use-fake-ui-for-media-stream"] });
 const context = await browser.newContext({
@@ -192,14 +213,49 @@ await page.evaluate(() => {
 await page.setInputFiles('input[type="file"] >> nth=0', "public/_shot-card.jpg");
 await page.waitForSelector(".card-sheet", { timeout: 90000 });
 await page.waitForTimeout(3200);
+// La fiche affiche la reponse du scan (cotes TCGdex du jour), pas la base :
+// les montants reels y sont remplaces, texte par texte, par la cote de vitrine.
+{
+  const fmt = (v) => new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(v);
+  const pairs = [];
+  for (const [cardId, show] of Object.entries(SHOWCASE_PRICES)) {
+    const real = savedPrices.find((r) => r.card_id === cardId);
+    if (!real) continue;
+    const [rw, rr] = fmt(real.avg30).split(",");
+    const [sw, sr] = fmt(show.avg30).split(",");
+    pairs.push([rw, sw], [rr, sr], [fmt(real.trend), fmt(show.trend)], [fmt(real.low), fmt(show.low)]);
+  }
+  const variationText = `+${(GROWTH["base1-4"] * 100).toLocaleString("fr-FR", { maximumFractionDigits: 1 })} % sur 30 j`;
+  const changed = await page.evaluate(({ pairs, variationText }) => {
+    const root = document.querySelector(".card-sheet");
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    let n = 0;
+    while (walker.nextNode()) {
+      const node = walker.currentNode;
+      for (const [a, b] of pairs) if (node.nodeValue === a) { node.nodeValue = b; n++; }
+    }
+    // La variation de la fiche est calculee par le scan sur la vraie cote : on l aligne sur la vitrine.
+    for (const p of root.querySelectorAll("p")) {
+      const t = p.textContent.trim();
+      if (t.includes("% sur ") && t.endsWith(" j")) {
+        p.textContent = variationText;
+        p.classList.remove("text-down");
+        p.classList.add("text-up");
+        n++;
+      }
+    }
+    return n;
+  }, { pairs, variationText });
+  console.log("fiche : montants remplaces", changed);
+}
 await shot("result");
+await applyShowcase();
 
 await page.goto(`${BASE}/u/${profile.username}`);
 await settle();
 await shot("public");
 
 await browser.close();
-fs.unlinkSync(CARD_FILE);
 
 for (const name of ["home", "collection", "scan", "result", "public"]) {
   const src = `${OUT}/${name}.png`;
@@ -211,7 +267,7 @@ for (const name of ["home", "collection", "scan", "result", "public"]) {
 
 // Détails agrandis, comme les vignettes zoomées des captures de store.
 const CROPS = {
-  "zoom-price": ["result", { left: 90, top: 1266, width: 985, height: 383 }],
+  "zoom-price": ["result", { left: 90, top: 1266, width: 985, height: 440 }],
   "zoom-details": ["result", { left: 96, top: 1758, width: 973, height: 668 }],
   "zoom-stats": ["home", { left: 122, top: 960, width: 920, height: 220 }],
   "zoom-row": ["collection", { left: 60, top: 670, width: 1047, height: 288 }],
@@ -221,6 +277,13 @@ for (const [name, [from, region]] of Object.entries(CROPS)) {
   console.log("detail", name, `${region.width}x${region.height}`);
 }
 
-await admin.from("price_history").delete().eq("snapshot_date", HIST_DATE).in("card_id", ids);
-await admin.auth.admin.deleteUser(userId);
-console.log("releves retires, compte jetable supprime");
+} finally {
+  if (fs.existsSync(CARD_FILE)) fs.unlinkSync(CARD_FILE);
+  for (const row of savedPrices) {
+    const { card_id, ...values } = row;
+    await admin.from("card_prices").update(values).eq("card_id", card_id);
+  }
+  await admin.from("price_history").delete().eq("snapshot_date", HIST_DATE).in("card_id", ids);
+  await admin.auth.admin.deleteUser(userId);
+  console.log("vraies cotes remises, releves retires, compte jetable supprime");
+}
