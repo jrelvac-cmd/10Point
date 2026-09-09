@@ -3,6 +3,7 @@ import { getSessionUser } from "@/lib/auth";
 import { getProfile } from "@/lib/profile";
 import { BottomNav } from "@/components/nav/BottomNav";
 import { TopBar } from "@/components/nav/TopBar";
+import { InstallTour } from "@/components/onboarding/InstallTour";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const user = await getSessionUser();
@@ -17,6 +18,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <div className="flex-1 px-4">{children}</div>
       <div className="scroll-edge-bottom" aria-hidden />
       <BottomNav />
+      <InstallTour />
     </div>
   );
 }

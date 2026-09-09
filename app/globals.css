@@ -533,3 +533,24 @@ html:has(.page-white) body {
     padding-left: 12px;
   }
 }
+
+/* ---- Tutoriel PWA : la fleche insiste vers le bouton, le bouton vise pulse. ---- */
+.tour-backdrop {
+  background: rgba(16, 20, 56, 0.55);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  animation: fade-in 240ms ease both;
+}
+@keyframes tour-nudge {
+  from { translate: 0 0; }
+  to { translate: var(--nudge-x, 0px) var(--nudge-y, 8px); }
+}
+.tour-nudge { animation: tour-nudge 0.8s ease-in-out infinite alternate; }
+@keyframes tour-ring {
+  from { box-shadow: 0 0 0 0 rgba(79, 95, 230, 0.55); }
+  to { box-shadow: 0 0 0 14px rgba(79, 95, 230, 0); }
+}
+.tour-target { animation: tour-ring 1.4s ease-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .tour-nudge, .tour-target { animation: none; }
+}

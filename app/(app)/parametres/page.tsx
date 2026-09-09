@@ -6,6 +6,7 @@ import { getSessionUser } from "@/lib/auth";
 import { getProfile } from "@/lib/profile";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { SettingsClient } from "@/components/settings/SettingsClient";
+import { InstallTourButton } from "@/components/onboarding/InstallTourButton";
 import { reconcileSubscription } from "@/lib/subscription";
 import { isPro, remainingScans, type Plan } from "@/lib/plans";
 import { APP_URL } from "@/lib/constants";
@@ -92,6 +93,11 @@ export default async function ParametresPage({
             Passer Pro
           </Link>
         )}
+      </section>
+
+      <section className="glass-card flex flex-col gap-3 px-5 py-5">
+        <h2 className="text-sm font-bold text-text-primary">Application</h2>
+        <InstallTourButton />
       </section>
 
       <SettingsClient
