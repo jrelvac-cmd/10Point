@@ -109,7 +109,7 @@ export function Viewfinder({
   shootRef.current = shoot;
 
   // Scan automatique : toutes les 150 ms, une vignette de la zone de cadrage
-  // est lue dans le flux ; une carte nette et immobile pendant ~600 ms
+  // est lue dans le flux ; une carte nette, rectangulaire et immobile pendant ~600 ms
   // déclenche la reconnaissance sans appui. Le bouton reste disponible.
   useEffect(() => {
     if (state !== "ready") return;
