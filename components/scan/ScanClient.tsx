@@ -27,7 +27,7 @@ import { formatEur } from "@/lib/pricing";
 import { BULK_SESSION_MAX, type Plan } from "@/lib/plans";
 import { TopBar } from "@/components/nav/TopBar";
 import { CardSheet, type CardSheetHandle } from "./CardSheet";
-import { Viewfinder } from "./Viewfinder";
+import { CORNERS, FRAME, FRAME_AREA, Viewfinder } from "./Viewfinder";
 
 type PriceSet = {
   trend: number | null;
@@ -76,7 +76,7 @@ type Props = {
 };
 
 /** Durée de l'animation de reconnaissance avant la page carte. */
-const REVEAL_MS = 2000;
+const REVEAL_MS = 2600;
 /** Instants de la scène de reconnaissance : les vibrations tombent sur la même image que le visuel. */
 const LOCK_DELAY_MS = 150;
 const SLAM_DELAY_MS = 600;
@@ -326,19 +326,19 @@ export function ScanClient({ isPro, plan, initials, quota, scansThisMonth }: Pro
         )}
 
         {loading && !selected && (
-          <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-[28px] bg-[#101438] shadow-card">
+          <div className="relative flex min-h-0 flex-1 overflow-hidden rounded-[28px] bg-[#101438] shadow-card">
             {shotUrl && (
               // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={shotUrl}
-                alt=""
-                className="absolute inset-0 h-full w-full object-cover opacity-40 blur-[2px]"
-              />
+              <img src={shotUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
             )}
-            <div className="relative flex flex-col items-center gap-3">
-              <Loader2 className="animate-spin text-white" size={30} />
-              <p className="text-sm font-medium text-white/85">Identification en cours…</p>
-            </div>
+            <ScanFrame
+              sweep
+              caption={
+                <>
+                  <Loader2 className="animate-spin" size={12} /> Identification en cours…
+                </>
+              }
+            />
           </div>
         )}
 
@@ -434,9 +434,66 @@ export function ScanClient({ isPro, plan, initials, quota, scansThisMonth }: Pro
 }
 
 /**
- * Verrouillage de la carte reconnue : la photo prise reste en fond, la carte
- * officielle surgit avec un halo, les coins se referment dessus et le prix
- * claque au centre.
+ * Le repère de la visée, reposé au même endroit sur la photo prise : la carte
+ * cadrée reste sous les coins. Le reste de la photo s'assombrit autour.
+ * `locked` : la carte est reconnue, ses bords s'allument en vert et les coins
+ * se referment ; `sweep` : un trait de lumière la parcourt pendant l'attente.
+ */
+function ScanFrame({
+  locked,
+  lockDelay = 0,
+  sweep,
+  caption,
+  children,
+}: {
+  locked?: boolean;
+  lockDelay?: number;
+  sweep?: boolean;
+  caption?: React.ReactNode;
+  children?: React.ReactNode;
+}) {
+  return (
+    <div className={FRAME_AREA}>
+      <div
+        className={cn(FRAME, "scan-focus", locked && "card-edge")}
+        style={{ containerType: "inline-size", "--lock-delay": `${lockDelay}ms` } as React.CSSProperties}
+      >
+        {sweep && <span className="scan-sweep" aria-hidden />}
+        <div className={cn("absolute -inset-3", locked && "lock-corners")}>
+          {CORNERS.map((c) => (
+            <span
+              key={c}
+              className={cn("absolute h-14 w-14 border-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.45)]", c)}
+            />
+          ))}
+        </div>
+        {children}
+        {caption && (
+          <p className="absolute -bottom-9 left-1/2 flex w-max -translate-x-1/2 items-center gap-1.5 rounded-full bg-black/45 px-3 py-1 text-[11px] font-semibold text-white/90 backdrop-blur">
+            {caption}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** Prix de la scène : sans centimes dès 100 €, pour tenir en gros sur la carte. */
+function formatBig(value: number | null) {
+  if (value === null) return "—";
+  const digits = value >= 100 ? 0 : 2;
+  return new Intl.NumberFormat("fr-FR", {
+    style: "currency",
+    currency: "EUR",
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  }).format(value);
+}
+
+/**
+ * Verrouillage de la carte reconnue : la photo prise reste nette en fond, les
+ * coins se referment sur la carte, ses bords s'allument en vert et le prix
+ * claque en énorme par-dessus, blanc cerné de vert.
  */
 function RevealScene({
   card,
@@ -467,17 +524,33 @@ function RevealScene({
       type="button"
       onClick={onSkip}
       aria-label="Voir la carte"
-      className="relative flex min-h-0 flex-1 cursor-pointer items-center justify-center overflow-hidden rounded-[28px] bg-[#101438] shadow-card"
+      className="relative flex min-h-0 flex-1 cursor-pointer overflow-hidden rounded-[28px] bg-[#101438] shadow-card"
     >
-      {shotUrl && (
+      {shotUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={shotUrl}
-          alt=""
-          className="absolute inset-0 h-full w-full object-cover opacity-45 blur-[2px]"
+        <img src={shotUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
+      ) : (
+        <Image
+          src={card.image_large ?? ""}
+          alt={card.name}
+          fill
+          sizes="100vw"
+          className="object-cover"
+          unoptimized
+          priority
         />
       )}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/50" />
+
+      <ScanFrame locked lockDelay={LOCK_DELAY_MS}>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span
+            className="price-slam whitespace-nowrap text-[56px] font-black tracking-tight text-white"
+            style={{ fontSize: "23cqw", animationDelay: `${SLAM_DELAY_MS}ms` }}
+          >
+            {formatBig(price)}
+          </span>
+        </div>
+      </ScanFrame>
 
       {total !== null && (
         <div className="absolute left-5 top-5 text-left">
@@ -485,40 +558,6 @@ function RevealScene({
           <p className="text-xl font-extrabold text-white drop-shadow">{formatEur(total)}</p>
         </div>
       )}
-
-      <div className="relative aspect-[63/88] w-[62%] max-w-[280px]">
-        <div className="lock-corners absolute -inset-3" style={{ animationDelay: `${LOCK_DELAY_MS}ms` }}>
-          {[
-            "left-0 top-0 rounded-tl-2xl border-l-[6px] border-t-[6px]",
-            "right-0 top-0 rounded-tr-2xl border-r-[6px] border-t-[6px]",
-            "bottom-0 left-0 rounded-bl-2xl border-b-[6px] border-l-[6px]",
-            "bottom-0 right-0 rounded-br-2xl border-b-[6px] border-r-[6px]",
-          ].map((c) => (
-            <span key={c} className={cn("absolute h-10 w-10 border-white drop-shadow-lg", c)} />
-          ))}
-        </div>
-
-        <div className="reveal-card h-full w-full overflow-hidden rounded-xl">
-          <Image
-            src={card.image_large ?? ""}
-            alt={card.name}
-            width={490}
-            height={684}
-            className="h-full w-full object-cover"
-            unoptimized
-            priority
-          />
-        </div>
-
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span
-            className="price-slam text-[44px] font-extrabold tracking-tight text-white"
-            style={{ animationDelay: `${SLAM_DELAY_MS}ms` }}
-          >
-            {formatEur(price)}
-          </span>
-        </div>
-      </div>
     </button>
   );
 }

@@ -23,6 +23,13 @@ type Props = {
 /** Rapport d'une capture : 390 × 844 points. */
 const SCREEN_RATIO = 844 / 390;
 
+/** Hauteur totale d'un téléphone entier (`full`) pour une largeur donnée. */
+export function phoneHeight(width: number) {
+  const em = width / 20;
+  const bezel = 0.7 * em;
+  return (width - 2 * bezel) * SCREEN_RATIO + 3.2 * em + 2 * bezel;
+}
+
 /**
  * Capture réelle de l'application dans un iPhone : cadre noir, Dynamic Island,
  * barre d'état à 9:41, barre d'accueil quand le bas est visible. Les cotes

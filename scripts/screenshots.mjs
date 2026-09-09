@@ -105,7 +105,8 @@ const context = await browser.newContext({
 await context.grantPermissions(["camera"]);
 
 // Fausse caméra : table sombre, puis la carte quand __showCard() est appelé.
-// toBlob est retenu tant que __holdShot vaut vrai, pour figer l'état « détectée ».
+// toBlob est retenu tant que __holdShot vaut vrai, pour figer l'état « détectée » ;
+// la prise retenue part dès que __holdShot repasse à faux, comme un vrai déclenchement.
 await context.addInitScript(() => {
   // Le badge de developpement Next.js ne doit pas apparaitre sur les captures.
   document.addEventListener("DOMContentLoaded", () => {
@@ -119,10 +120,25 @@ await context.addInitScript(() => {
   window.__showCard = () => {
     showCard = true;
   };
-  window.__holdShot = false;
+  let hold = false;
+  let held = null;
+  Object.defineProperty(window, "__holdShot", {
+    get: () => hold,
+    set: (v) => {
+      hold = v;
+      if (!v && held) {
+        const run = held;
+        held = null;
+        run();
+      }
+    },
+  });
   const origToBlob = HTMLCanvasElement.prototype.toBlob;
   HTMLCanvasElement.prototype.toBlob = function (cb, ...rest) {
-    if (window.__holdShot) return;
+    if (hold) {
+      held = () => origToBlob.call(this, cb, ...rest);
+      return;
+    }
     return origToBlob.call(this, cb, ...rest);
   };
   navigator.mediaDevices.getUserMedia = async () => {
@@ -207,10 +223,19 @@ await page.evaluate(() => {
 await page.waitForTimeout(250);
 await shot("scan");
 
+// La prise retenue part : la photo est l'image de la fausse camera, la carte
+// sous le cadre. La scene de reconnaissance est capturee une fois le prix pose.
 await page.evaluate(() => {
   window.__holdShot = false;
 });
-await page.setInputFiles('input[type="file"] >> nth=0', "public/_shot-card.jpg");
+await page.waitForSelector(".price-slam", { timeout: 90000 });
+// Le prix qui claque vient de la reponse du scan : on y pose la cote de vitrine, sans centimes comme la scene.
+await page.evaluate((text) => {
+  const el = document.querySelector(".price-slam");
+  if (el) el.textContent = text;
+}, new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(SHOWCASE_PRICES["base1-4"].avg30));
+await page.waitForTimeout(1250);
+await shot("reveal");
 await page.waitForSelector(".card-sheet", { timeout: 90000 });
 await page.waitForTimeout(3200);
 // La fiche affiche la reponse du scan (cotes TCGdex du jour), pas la base :
@@ -257,7 +282,7 @@ await shot("public");
 
 await browser.close();
 
-for (const name of ["home", "collection", "scan", "result", "public"]) {
+for (const name of ["home", "collection", "scan", "reveal", "result", "public"]) {
   const src = `${OUT}/${name}.png`;
   const meta = await sharp(src).metadata();
   await sharp(src).webp({ quality: 84 }).toFile(`${OUT}/${name}.webp`);
@@ -268,9 +293,11 @@ for (const name of ["home", "collection", "scan", "result", "public"]) {
 // Détails agrandis, comme les vignettes zoomées des captures de store.
 const CROPS = {
   "zoom-price": ["result", { left: 90, top: 1266, width: 985, height: 440 }],
-  "zoom-details": ["result", { left: 96, top: 1758, width: 973, height: 668 }],
+  // Carte « Details » depuis son bord haut arrondi jusque sous la deuxieme ligne.
+  "zoom-details": ["result", { left: 48, top: 1796, width: 1074, height: 620 }],
   "zoom-stats": ["home", { left: 122, top: 960, width: 920, height: 220 }],
-  "zoom-row": ["collection", { left: 60, top: 670, width: 1047, height: 288 }],
+  // Premiere ligne de la liste (Drascore, +69,7 %), bordure arrondie comprise.
+  "zoom-row": ["collection", { left: 30, top: 880, width: 1110, height: 305 }],
 };
 for (const [name, [from, region]] of Object.entries(CROPS)) {
   await sharp(`${OUT}/${from}.webp`).extract(region).webp({ quality: 86 }).toFile(`${OUT}/${name}.webp`);

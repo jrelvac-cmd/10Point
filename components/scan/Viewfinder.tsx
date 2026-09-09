@@ -210,12 +210,11 @@ export function Viewfinder({
         <>
           {/* Repère de cadrage au format d'une carte (63 × 88 mm) : seulement
               les coins, pour ne pas masquer la carte. */}
-          <div className="pointer-events-none absolute inset-0 flex items-center justify-center pb-24 pt-10">
-            <div className="relative aspect-[63/88] h-[64%]">
-              <Corner locked={detect === "locked"} className="left-0 top-0 rounded-tl-2xl border-l-[5px] border-t-[5px]" />
-              <Corner locked={detect === "locked"} className="right-0 top-0 rounded-tr-2xl border-r-[5px] border-t-[5px]" />
-              <Corner locked={detect === "locked"} className="bottom-0 left-0 rounded-bl-2xl border-b-[5px] border-l-[5px]" />
-              <Corner locked={detect === "locked"} className="bottom-0 right-0 rounded-br-2xl border-b-[5px] border-r-[5px]" />
+          <div className={FRAME_AREA}>
+            <div className={FRAME}>
+              {CORNERS.map((c) => (
+                <Corner key={c} locked={detect === "locked"} className={c} />
+              ))}
               {/* Sous le repère : ce que la détection voit, pour que l'attente se comprenne. */}
               <p
                 aria-live="polite"
@@ -275,12 +274,28 @@ export function Viewfinder({
   );
 }
 
+/**
+ * Repère de cadrage au format carte, 64 % de la hauteur, un peu au-dessus du
+ * centre. Les scènes qui suivent la photo reposent le même cadre au même
+ * endroit : la carte cadrée y reste sous les coins.
+ */
+export const FRAME_AREA = "pointer-events-none absolute inset-0 flex items-center justify-center pb-24 pt-10";
+export const FRAME = "relative aspect-[63/88] h-[64%]";
+export const CORNERS = [
+  "left-0 top-0 rounded-tl-[22px] border-l-[9px] border-t-[9px]",
+  "right-0 top-0 rounded-tr-[22px] border-r-[9px] border-t-[9px]",
+  "bottom-0 left-0 rounded-bl-[22px] border-b-[9px] border-l-[9px]",
+  "bottom-0 right-0 rounded-br-[22px] border-b-[9px] border-r-[9px]",
+];
+
 function Corner({ className, locked }: { className: string; locked: boolean }) {
   return (
     <span
       className={cn(
-        "absolute h-9 w-9 transition-colors duration-150",
-        locked ? "border-emerald-400 drop-shadow-[0_0_10px_rgba(74,222,128,0.9)]" : "border-white",
+        "absolute h-14 w-14 transition-colors duration-150",
+        locked
+          ? "border-emerald-400 drop-shadow-[0_0_10px_rgba(74,222,128,0.9)]"
+          : "border-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.45)]",
         className,
       )}
     />

@@ -262,14 +262,51 @@ h1 {
   from { transform: scale(0.4); opacity: 0; }
   to { transform: scale(1); opacity: 1; }
 }
-/* Les délais sont posés en ligne par le composant, qui y cale la vibration. */
-.lock-corners { animation: lock-corners var(--dur-spring-bounce) var(--ease-spring-bounce) both; }
+@keyframes edge-in {
+  from { opacity: 0; transform: scale(1.06); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes scan-sweep {
+  0% { top: 3%; opacity: 0; }
+  15% { opacity: 1; }
+  85% { opacity: 1; }
+  100% { top: 96%; opacity: 0; }
+}
+/* Le délai (--lock-delay) est posé en ligne par le composant, qui y cale la vibration. */
+.lock-corners { animation: lock-corners var(--dur-spring-bounce) var(--ease-spring-bounce) var(--lock-delay, 0ms) both; }
 .reveal-card { animation: reveal-card var(--dur-spring) var(--ease-spring) both; }
+/* Autour du cadre, la photo s'assombrit : seule la carte reste en lumière. */
+.scan-focus {
+  border-radius: 14px;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.42);
+}
+/* Bords de la carte reconnue, allumés en vert. */
+.card-edge::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: 14px;
+  border: 4px solid #4ade80;
+  box-shadow: 0 0 22px rgba(74, 222, 128, 0.85), inset 0 0 22px rgba(74, 222, 128, 0.45);
+  animation: edge-in var(--dur-spring) var(--ease-spring) var(--lock-delay, 0ms) both;
+}
+.scan-sweep {
+  position: absolute;
+  left: 6%;
+  right: 6%;
+  height: 3px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.95), transparent);
+  box-shadow: 0 0 14px rgba(255, 255, 255, 0.8);
+  animation: scan-sweep 1.4s ease-in-out infinite;
+}
+/* Le prix qui claque : blanc, cerné d'un vert vif, halo vert. Les cotes suivent
+   la taille du texte, elle-même calée sur la largeur de la carte. */
 .price-slam {
   animation: price-slam var(--dur-spring-slam) var(--ease-spring-slam) both;
-  -webkit-text-stroke: 2px #17402c;
+  -webkit-text-stroke: 0.14em #35e06b;
   paint-order: stroke fill;
-  text-shadow: 0 0 18px rgba(74, 222, 128, 0.95), 0 0 40px rgba(74, 222, 128, 0.5), 0 6px 14px rgba(0, 0, 0, 0.55);
+  text-shadow: 0 0 0.25em rgba(74, 222, 128, 0.95), 0 0 0.6em rgba(74, 222, 128, 0.55), 0 0.08em 0.2em rgba(0, 0, 0, 0.6);
 }
 
 /* ---- Arrivée des pages et cascades ---- */
@@ -311,11 +348,11 @@ h1 {
   to { opacity: 1; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .card-reveal, .price-pop, .lock-corners, .reveal-card, .price-slam,
+  .card-reveal, .price-pop, .lock-corners, .reveal-card, .price-slam, .card-edge::after,
   .page-enter, .nav-enter, .stagger > *, .hero-enter {
     animation: fade-in 200ms ease both;
   }
-  .card-shine { display: none; }
+  .card-shine, .scan-sweep { display: none; }
   .reveal { opacity: 1; transform: none; transition: opacity 200ms ease; }
   .float-card, .marquee-track, .cta-glow, .demo-price { animation: none; }
   .pressable, .btn-primary, .btn-secondary, .pill,

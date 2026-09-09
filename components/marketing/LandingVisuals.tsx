@@ -11,9 +11,8 @@ const STEP_SHOTS: {
     alt: "Le viseur reconnaît une carte Dracaufeu : coins verts et mention « Carte détectée »",
   },
   {
-    src: "/screenshots/result.webp",
-    alt: "Fiche de la carte reconnue : Dracaufeu du Set de Base, cote de référence en euros",
-    align: "top",
+    src: "/screenshots/reveal.webp",
+    alt: "Carte reconnue : la photo du Dracaufeu, cernée de vert, avec sa cote de 1 349 € en gros par-dessus",
   },
   {
     src: "/screenshots/home.webp",

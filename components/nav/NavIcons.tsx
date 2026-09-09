@@ -5,7 +5,7 @@ type IconProps = {
   className?: string;
 };
 
-const INACTIVE = "#A4A4A4";
+const INACTIVE = "#D5D5D5";
 const ACTIVE = "#FFFFFF";
 
 export function HomeIcon({ active, className }: IconProps) {
