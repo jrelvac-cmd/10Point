@@ -135,6 +135,27 @@ export async function getCardById(id: string): Promise<TcgdexCard | null> {
 }
 
 /**
+ * Le nom imprimé se compare mal au nom indexé par TCGdex : les « ex » modernes
+ * s'y écrivent avec un tiret (« Dracaufeu-ex »), les Méga avec « M-… ». On
+ * interroge donc sur le cœur du nom (le filtre TCGdex est un « contient »),
+ * et on compare ensuite en ignorant tirets, espaces, accents et casse.
+ */
+const NAME_SUFFIX = /[\s-]+(ex|gx|v|vmax|vstar|v-union|break)\s*$/i;
+
+function coreName(name: string): string {
+  return name.replace(/^m[\s-]+/i, "").replace(NAME_SUFFIX, "").trim();
+}
+
+export function sameName(a: string, b: string): boolean {
+  const norm = (s: string) =>
+    s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[\s-]+/g, " ").trim();
+  return norm(a) === norm(b);
+}
+
+/** Nombre de cartes chargées en détail : au-delà, le bon candidat est déjà en tête. */
+const DETAIL_LIMIT = 12;
+
+/**
  * TCGdex indexe les cartes dans leur langue : le nom français lu sur la carte
  * sert donc directement de critère, sans traduction. Les résultats de recherche
  * ne portent pas les prix — il faut charger chaque carte retenue.
@@ -147,35 +168,50 @@ export async function findCandidates(extraction: {
   const { name_fr, number, set_total } = extraction;
   if (!name_fr && !number) return [];
 
-  const params = new URLSearchParams();
-  if (name_fr) params.set("name", name_fr);
-  // « 25 » et « 025 » coexistent selon les sets : on interroge sans le zéro
-  // initial puis, si besoin, avec la forme exacte.
-  const variants = number
-    ? Array.from(new Set([number.replace(/^0+/, ""), number])).filter(Boolean)
-    : [null];
+  const core = name_fr ? coreName(name_fr) : null;
+  const total = set_total && /^\d+$/.test(set_total) ? Number(set_total) : null;
+  const stripped = number ? number.replace(/^0+/, "") : null;
+
+  const base = new URLSearchParams();
+  if (core) base.set("name", core);
 
   const seen = new Map<string, RawSummary>();
-  for (const variant of variants) {
-    const qs = new URLSearchParams(params);
-    if (variant) qs.set("localId", variant);
-    const list = (await request<RawSummary[]>(`/cards?${qs}`)) ?? [];
-    for (const item of list) if (!seen.has(item.id)) seen.set(item.id, item);
-    if (seen.size >= 20) break;
+  const weight = new Map<string, number>();
+  const collect = (list: RawSummary[] | null, bonus: number) => {
+    for (const item of list ?? []) {
+      if (!seen.has(item.id)) seen.set(item.id, item);
+      weight.set(item.id, (weight.get(item.id) ?? 0) + bonus);
+    }
+  };
+
+  // Par numéro : « 25 » et « 025 » coexistent selon les sets, et le filtre
+  // TCGdex est un « contient » (25 ramène aussi 025, 125, 225…).
+  if (number) {
+    for (const variant of new Set([stripped, number].filter(Boolean) as string[])) {
+      const qs = new URLSearchParams(base);
+      qs.set("localId", variant);
+      collect(await request<RawSummary[]>(`/cards?${qs}`), 1);
+    }
   }
 
-  // Recherche élargie au nom seul quand le numéro n'a rien donné.
-  if (seen.size === 0 && name_fr) {
-    const list = (await request<RawSummary[]>(`/cards?name=${encodeURIComponent(name_fr)}`)) ?? [];
-    for (const item of list.slice(0, 20)) seen.set(item.id, item);
+  // Par total du set : c'est ce qui ramène les illustrations rares et les
+  // secrètes, numérotées au-delà du total, quand le numéro a été mal lu.
+  if (core && total !== null) {
+    const qs = new URLSearchParams(base);
+    qs.set("set.cardCount.official", String(total));
+    collect(await request<RawSummary[]>(`/cards?${qs}`), 2);
   }
 
+  // Recherche élargie au nom seul quand rien n'a rien donné.
+  if (seen.size === 0 && core) collect(await request<RawSummary[]>(`/cards?${base}`), 0);
   if (seen.size === 0) return [];
 
-  // Les résumés n'ont ni set ni prix : on charge le détail des plus probables.
-  const details = await Promise.all(
-    [...seen.values()].slice(0, 12).map((s) => getCardById(s.id).catch(() => null)),
-  );
+  // Les résumés n'ont ni set ni prix : on charge le détail des plus probables,
+  // numéro exact et set correspondant en tête.
+  const score = (s: RawSummary) =>
+    (weight.get(s.id) ?? 0) + (stripped && s.localId.replace(/^0+/, "") === stripped ? 3 : 0);
+  const ordered = [...seen.values()].sort((a, b) => score(b) - score(a)).slice(0, DETAIL_LIMIT);
+  const details = await Promise.all(ordered.map((s) => getCardById(s.id).catch(() => null)));
 
   return rank(details.filter((c): c is TcgdexCard => c !== null), name_fr, set_total, number);
 }
@@ -192,7 +228,7 @@ function scoreCard(
   number: string | null,
 ) {
   let s = 0;
-  if (name && card.name.toLowerCase().trim() === name.toLowerCase().trim()) s += EXACT_NAME;
+  if (name && sameName(card.name, name)) s += EXACT_NAME;
   if (total !== null && card.setPrintedTotal === total) s += EXACT_TOTAL;
   if (number && card.localId.replace(/^0+/, "") === number.replace(/^0+/, "")) {
     s += EXACT_NUMBER;
