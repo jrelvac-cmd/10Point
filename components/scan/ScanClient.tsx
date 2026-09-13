@@ -33,18 +33,11 @@ type PriceSet = {
   trend: number | null;
   low: number | null;
   avg30: number | null;
-  /** Cote de référence : ventes eBay de la carte française si elles existent, sinon moyenne 30 j Cardmarket. */
+  /** Cote de référence : annonce Cardmarket de la carte française si elle existe, sinon moyenne 30 j toutes langues. */
   reference: number | null;
   source?: "fr" | "cardmarket";
-  /** Cote « carte française, état 9/10 » et de quoi l'expliquer. */
-  fr?: {
-    price: number;
-    low: number | null;
-    high: number | null;
-    sampleCount: number;
-    source: "ebay_sold" | "ebay_active";
-    windowDays: number;
-  } | null;
+  /** Cote « carte française, near mint » : Cardmarket via TCGGO. */
+  fr?: { price: number } | null;
   /** Marché mince : la statistique du dernier jour s'écarte fortement de la référence. */
   volatile: boolean;
   variation: { pct: number; days: number } | null;
@@ -647,14 +640,8 @@ function CardPage({
           )}
           {price.fr ? (
             <p className="mt-1 text-[11px] text-text-muted">
-              <span className="font-semibold text-accent-dark">Carte française · état 9/10</span>
-              {" · "}
-              {price.fr.source === "ebay_sold"
-                ? `médiane de ${price.fr.sampleCount} ventes eBay sur ${price.fr.windowDays} j`
-                : `d'après ${price.fr.sampleCount} annonces eBay France`}
-              {price.fr.low !== null && price.fr.high !== null && (
-                <> · de {formatEur(price.fr.low)} à {formatEur(price.fr.high)}</>
-              )}
+              <span className="font-semibold text-accent-dark">Cardmarket · carte française, near mint</span>
+              {" · annonce la moins chère"}
             </p>
           ) : (
             <p className="mt-1 text-[11px] text-text-muted">

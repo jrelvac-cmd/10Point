@@ -4,7 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { extractCardFromImage } from "@/lib/anthropic";
 import { findCandidates, isUnambiguous, ebaySearchUrl, getSetInfo } from "@/lib/tcgdex";
 import { cacheCardAndPrices } from "@/lib/cards";
-import { getFrPrice, toFrPrice, type FrPriceRow } from "@/lib/ebay";
+import { getFrPrice, toFrPrice, type FrPriceRow } from "@/lib/tcggo";
 import { canScan, remainingScans, type Plan } from "@/lib/plans";
 import {
   resolvePrice,
@@ -16,7 +16,7 @@ import {
   VARIATION_WINDOW_DAYS,
 } from "@/lib/pricing";
 
-/** eBay ne doit jamais retarder un scan au-delà de quelques secondes : passé ce délai, Cardmarket suffit. */
+/** TCGGO ne doit jamais retarder un scan au-delà de quelques secondes : passé ce délai, la cote toutes langues suffit. */
 const FR_PRICE_TIMEOUT_MS = 7_000;
 
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null> {

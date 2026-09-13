@@ -273,9 +273,9 @@ export function CollectionClient({
               {entry.priceSource === "fr" && (
                 <span
                   className="rounded-full bg-accent/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-accent-dark"
-                  title="Cote d'après les ventes eBay France d'une carte française, brute, en bon état"
+                  title="Cote Cardmarket de la carte française : annonce near mint la moins chère"
                 >
-                  FR · état 9/10
+                  FR · near mint
                 </span>
               )}
               {entry.variation !== null && (

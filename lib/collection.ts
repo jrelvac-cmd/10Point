@@ -10,7 +10,7 @@ import {
   type PriceVariation,
   type ReferenceSource,
 } from "./pricing";
-import { toFrPrice, type FrPriceRow } from "./ebay";
+import { toFrPrice, type FrPriceRow } from "./tcggo";
 
 export type CollectionEntry = {
   id: string;
@@ -30,7 +30,7 @@ export type CollectionEntry = {
     imageLarge: string | null;
   };
   unitPrice: number | null;
-  /** D'où vient le prix unitaire : ventes eBay de la carte française, ou guide Cardmarket. */
+  /** D'où vient le prix unitaire : annonce Cardmarket de la carte française (TCGGO), ou guide Cardmarket toutes langues. */
   priceSource: ReferenceSource;
   lineValue: number | null;
   variation: PriceVariation | null;

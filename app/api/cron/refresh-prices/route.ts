@@ -3,7 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { isCronAuthorized } from "@/lib/cron-auth";
 import { getCardById } from "@/lib/tcgdex";
 import { cacheCardAndPrices } from "@/lib/cards";
-import { ebayConfigured, refreshFrPrice } from "@/lib/ebay";
+import { tcggoConfigured, refreshFrPrices } from "@/lib/tcggo";
 
 export const maxDuration = 60;
 
@@ -73,6 +73,7 @@ export async function GET(request: Request) {
   let refreshed = 0;
   let failed = 0;
   let unavailable = 0;
+  const processed: { id: string }[] = [];
 
   // Séquentiel et volontairement modeste : l'API TCGdex est gratuite, inutile
   // de la marteler. Les cartes non traitées le seront à l'exécution suivante.
@@ -90,18 +91,22 @@ export async function GET(request: Request) {
         continue;
       }
       await cacheCardAndPrices(card);
-      // La cote francaise suit le meme rythme ; sans cles eBay, l appel est inerte.
-      if (ebayConfigured()) await refreshFrPrice(card);
+      processed.push({ id: card.id });
       refreshed++;
     } catch {
       failed++;
     }
   }
 
+  // La cote française suit le même rythme, en un lot groupé par 20 pour
+  // ménager le quota TCGGO ; sans clé, l'appel est inerte.
+  const fr = tcggoConfigured() ? await refreshFrPrices(processed) : new Map();
+
   return NextResponse.json({
     checked: staleness.size,
     due: due.length,
     refreshed,
+    fr_refreshed: fr.size,
     unavailable,
     failed,
   });

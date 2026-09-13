@@ -252,10 +252,10 @@ export function formatPct(value: number | null): string {
 }
 
 /**
- * Cote affichée : la cote française (eBay, carte FR brute en bon état) quand
- * elle existe pour la carte telle qu'elle est possédée, sinon Cardmarket.
- * eBay n'est lu que pour l'exemplaire courant : une reverse ou une 1re
- * édition garde la cote Cardmarket de sa variante.
+ * Cote affichée : la cote française (Cardmarket via TCGGO, annonce near mint
+ * FR la moins chère) quand elle existe pour la carte telle qu'elle est
+ * possédée, sinon la cote toutes langues. TCGGO ne cote que l'exemplaire
+ * courant : une reverse ou une 1re édition garde la cote de sa variante.
  */
 export type ReferenceSource = "fr" | "cardmarket";
 

@@ -8,9 +8,9 @@ Voir le plan de build complet : `docs/plan.md` (copie de `C:\Users\jrelv\.claude
 
 - Next.js 14.2.x (App Router) + TypeScript + Tailwind CSS v3
 - Supabase (Auth, Postgres + RLS, Storage) — région EU
-- Paiement : Whop (checkout hébergé)
+- Paiement : Lemon Squeezy (checkout hébergé, Merchant of Record : pas besoin d'entreprise)
 - Vision : Claude (Anthropic)
-- Prix : Cardmarket via PokéTCG API
+- Prix : Cardmarket via TCGdex ; carte française via TCGGO (RapidAPI)
 - Déploiement : Vercel
 
 ## Démarrer en local
