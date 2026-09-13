@@ -184,7 +184,7 @@ export default async function PricingPage({
       </div>
 
       <p className="glass-card max-w-lg px-5 py-4 text-center text-[11px] text-text-secondary">
-        Paiement sécurisé par Whop. Les abonnements se renouvellent
+        Paiement sécurisé par Lemon Squeezy, TVA incluse. Les abonnements se renouvellent
         automatiquement et peuvent être annulés à tout moment depuis tes
         paramètres. Voir les{" "}
         <Link href="/legal/cgv" className="underline">

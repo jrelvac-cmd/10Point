@@ -1,3 +1,5 @@
+> Note (10/09/2026) : Whop remplacé par Lemon Squeezy (Merchant of Record, utilisable sans entreprise). Les mentions ci-dessous ont été renommées ; le détail des événements est dans `lib/lemonsqueezy.ts` et `app/api/webhooks/lemonsqueezy/route.ts`.
+
 # Plan de build — TenPoint MVP (production-ready)
 
 ## Contexte
@@ -8,7 +10,7 @@ SaaS greenfield pour collectionneurs Pokémon français : scan photo → identif
 
 | Sujet | Décision |
 |---|---|
-| Paiement | **Whop checkout hébergé** + webhooks + API membership (évolutif vers embedded plus tard). Affiliation Whop activée dès le MVP. Prix inchangés : Free / 3,99 €/mois / 24,99 €/an / 59,99 € lifetime. Trial 7j (mensuel + annuel). Annulation via hub client Whop. |
+| Paiement | **Lemon Squeezy checkout hébergé** + webhooks + API membership (évolutif vers embedded plus tard). Affiliation Lemon Squeezy activée dès le MVP. Prix inchangés : Free / 3,99 €/mois / 24,99 €/an / 59,99 € lifetime. Trial 7j (mensuel + annuel). Annulation via hub client Lemon Squeezy. |
 | Badge Fondateur | **Supprimé** |
 | Conseil TenPoint | **SUPPRIMÉ — aucun bloc conseil IA dans l'app** |
 | Prix | **Cardmarket via PokéTCG API** (`cardmarket.prices` : trendPrice, lowPrice, avg1/avg7/avg30, EUR). Zéro eBay. Variation 30j = (trend − avg30)/avg30. |
@@ -35,7 +37,7 @@ SaaS greenfield pour collectionneurs Pokémon français : scan photo → identif
 
 ## Phase 0 — Prérequis comptes (à lancer J1, délais d'approbation)
 
-1. **Whop** : créer le compte vendeur + la company, créer 3 plans (mensuel 3,99 € recurring trial 7j, annuel 24,99 € recurring trial 7j, lifetime 59,99 € one-time), activer l'affiliation, récupérer `WHOP_API_KEY`, `WHOP_WEBHOOK_SECRET`, les `plan_id`. ⚠️ Délai d'approbation possible → à faire en premier.
+1. **Lemon Squeezy** : créer le compte vendeur + la company, créer 3 plans (mensuel 3,99 € recurring trial 7j, annuel 24,99 € recurring trial 7j, lifetime 59,99 € one-time), activer l'affiliation, récupérer `WHOP_API_KEY`, `WHOP_WEBHOOK_SECRET`, les `plan_id`. ⚠️ Délai d'approbation possible → à faire en premier.
 2. **Anthropic** : clé API + alerte budget 20 €.
 3. **PokéTCG** (pokemontcg.io) : clé API gratuite (rate limit meilleur).
 4. **Supabase** : projet région EU (Frankfurt).
@@ -50,23 +52,23 @@ SaaS greenfield pour collectionneurs Pokémon français : scan photo → identif
 ```
 app/
   (marketing)/page.tsx            # Landing FR (non connecté) : hero, démo, pricing, FAQ
-  (marketing)/pricing/page.tsx    # 3 plans, Lifetime en avant, CTA → checkout Whop
+  (marketing)/pricing/page.tsx    # 3 plans, Lifetime en avant, CTA → checkout Lemon Squeezy
   (marketing)/legal/...           # mentions légales, CGV, confidentialité
   (app)/home/page.tsx             # Dashboard : hero gauge + Top 5 switchable (PAS de bloc conseil)
   (app)/collection/page.tsx       # Bibliothèque : visuels officiels, filtres (set/rareté/holo/reverse), tri
   (app)/scan/page.tsx             # Caméra mobile + upload desktop, mode bulk (Pro)
-  (app)/parametres/page.tsx       # Plan actuel, toggle partage, toggle notifs, hub Whop, bouton suppression compte
+  (app)/parametres/page.tsx       # Plan actuel, toggle partage, toggle notifs, hub Lemon Squeezy, bouton suppression compte
   u/[username]/page.tsx           # Collection publique (opt-in, RLS)
   login/page.tsx                  # Google OAuth + email/password + choix username
   api/scan/route.ts               # image → Claude vision → matching PokéTCG → carte + prix
   api/collection/route.ts + [id]/ # CRUD collection
   api/prices/refresh/route.ts     # Cron quotidien (Vercel cron) : refresh caches expirés 24h/48h
-  api/webhooks/whop/route.ts      # Webhooks Whop signés → profiles.plan
-  api/checkout/route.ts           # Redirection vers checkout Whop selon plan
+  api/webhooks/lemonsqueezy/route.ts      # Webhooks Lemon Squeezy signés → profiles.plan
+  api/checkout/route.ts           # Redirection vers checkout Lemon Squeezy selon plan
   api/account/delete-request/...  # Email Resend vers admin
 lib/
   supabase/ (client, server, middleware)   # @supabase/ssr
-  whop.ts        # vérif signature webhook + GET membership (fallback au login)
+  lemonsqueezy.ts        # vérif signature webhook + GET membership (fallback au login)
   anthropic.ts   # appel vision, prompt extraction JSON strict
   poketcg.ts     # recherche cartes, extraction cardmarket.prices
   pricing.ts     # calcul variation 30j, agrégats gauge, valeur totale
@@ -83,7 +85,7 @@ middleware.ts                # protection routes (tout sauf marketing/login/u/*)
 ## Schéma base de données (Supabase, RLS partout)
 
 Adapter le schéma du PRD §6 :
-- `profiles` : remplacer les champs Stripe par `whop_user_id`, `whop_membership_id` ; garder `plan ('free'|'pro'|'lifetime')`, `plan_expires_at`, `scans_this_month` (+ `scans_reset_at`), `share_collection`, `username unique` ; retirer les champs notif jusqu'à P2 (ou les garder dormants).
+- `profiles` : remplacer les champs Stripe par `ls_customer_id`, `ls_subscription_id` ; garder `plan ('free'|'pro'|'lifetime')`, `plan_expires_at`, `scans_this_month` (+ `scans_reset_at`), `share_collection`, `username unique` ; retirer les champs notif jusqu'à P2 (ou les garder dormants).
 - `pokemon_cards` : id PokéTCG, noms, set, numéro, rareté, `image_small`, `image_large`.
 - `card_prices` : `trend, low, avg1, avg7, avg30` + `reverse_trend, reverse_low, reverse_avg1, reverse_avg7, reverse_avg30`, `currency 'EUR', cached_at, expires_at` (24h ou 48h selon le tier du détenteur le plus exigeant).
 - `price_history` : snapshot quotidien `(card_id, trend, avg30, reverse_trend, reverse_avg30, snapshot_date)` — construit notre propre historique dès J1 pour la V1 et les notifs dormantes.
@@ -110,13 +112,13 @@ Mode bulk (Pro) : même route, UI « Ajouter & Suivant », compteur, max 50, ré
 
 ---
 
-## Intégration Whop
+## Intégration Lemon Squeezy
 
-- `/api/checkout?plan=monthly|yearly|lifetime` → redirige vers l'URL de checkout hébergé Whop du plan (avec `metadata.user_id` = Supabase uid).
-- `/api/webhooks/whop` : vérification de signature obligatoire ; events `membership.went_valid` → `plan='pro'|'lifetime'` (+ `plan_expires_at` ; lifetime = NULL) ; `membership.went_invalid` / annulation → `plan='free'`.
-- **Fallback anti-webhook-manqué** : au login (et 1×/jour max via cache), si `whop_membership_id` existe, GET membership via l'API Whop et réconcilier `profiles.plan`.
+- `/api/checkout?plan=monthly|yearly|lifetime` → redirige vers l'URL de checkout hébergé Lemon Squeezy du plan (avec `metadata.user_id` = Supabase uid).
+- `/api/webhooks/lemonsqueezy` : vérification de signature obligatoire ; events `membership.went_valid` → `plan='pro'|'lifetime'` (+ `plan_expires_at` ; lifetime = NULL) ; `membership.went_invalid` / annulation → `plan='free'`.
+- **Fallback anti-webhook-manqué** : au login (et 1×/jour max via cache), si `ls_subscription_id` existe, GET membership via l'API Lemon Squeezy et réconcilier `profiles.plan`.
 - Gating : helper `lib/plans.ts` utilisé côté serveur (API routes) ET côté UI (compteur « X scans restants », gate bulk, limite 100 cartes avec bandeau downgrade).
-- Paramètres : lien vers le hub client Whop (gestion/annulation self-service).
+- Paramètres : lien vers le hub client Lemon Squeezy (gestion/annulation self-service).
 
 ---
 
@@ -139,7 +141,7 @@ Mode bulk (Pro) : même route, UI « Ajouter & Suivant », compteur, max 50, ré
 
 **J3 — Collection & home** : page bibliothèque (visuels officiels, filtres set/rareté/holo/reverse, tris, suppression, quantité inline) ; hero gauge + Top 5 switchable ; calculs `lib/pricing.ts`. ✅ *Checkpoint : dashboard vivant avec vraies données.*
 
-**J4 — Whop** : checkout, webhooks signés, fallback membership au login, gating complet (quota scans valides, 100 cartes, bandeau downgrade), page pricing, hub client. ✅ *Checkpoint : upgrade Pro test → gates levées → annulation → retour Free.*
+**J4 — Lemon Squeezy** : checkout, webhooks signés, fallback membership au login, gating complet (quota scans valides, 100 cartes, bandeau downgrade), page pricing, hub client. ✅ *Checkpoint : upgrade Pro test → gates levées → annulation → retour Free.*
 
 **J5 — Features Pro & pages** : bulk scan (max 50) ; page publique `/u/[username]` (coupée si retard) ; paramètres (partage, plan, suppression compte par email Resend) ; pages légales ; landing marketing FR. ✅ *Checkpoint : parcours complet visiteur → payant.*
 
@@ -155,8 +157,8 @@ Mode bulk (Pro) : même route, UI « Ajouter & Suivant », compteur, max 50, ré
 NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY / SUPABASE_SERVICE_ROLE_KEY
 ANTHROPIC_API_KEY
 POKEMONTCG_API_KEY
-WHOP_API_KEY / WHOP_WEBHOOK_SECRET
-WHOP_PLAN_MONTHLY_ID / WHOP_PLAN_YEARLY_ID / WHOP_PLAN_LIFETIME_ID
+LEMONSQUEEZY_API_KEY / LEMONSQUEEZY_WEBHOOK_SECRET
+LEMONSQUEEZY_CHECKOUT_URL_MONTHLY / _YEARLY / _LIFETIME
 RESEND_API_KEY / RESEND_FROM_EMAIL / ADMIN_EMAIL (suppressions de compte)
 SENTRY_DSN
 NEXT_PUBLIC_APP_NAME / NEXT_PUBLIC_APP_URL   # branding changeable (nom non définitif)
@@ -171,7 +173,7 @@ CRON_SECRET                                   # protection route cron
 - [ ] 10 vraies cartes FR scannées : identification correcte ou sélecteur, prix EUR stable (re-scan = même prix, cache) ; cases Holo/Reverse fonctionnelles et prix reverse correct.
 - [ ] Scan raté ne décrémente pas le quota ; 21e scan Free → gate pricing.
 - [ ] RLS : le compte B ne voit rien du compte A (test anon key) ; `/u/x` invisible si partage off.
-- [ ] Whop mode test : checkout mensuel/annuel/lifetime → `profiles.plan` mis à jour par webhook ; annulation → retour Free ; webhook coupé → réconciliation au login.
+- [ ] Lemon Squeezy mode test : checkout mensuel/annuel/lifetime → `profiles.plan` mis à jour par webhook ; annulation → retour Free ; webhook coupé → réconciliation au login.
 - [ ] Aucune clé secrète dans le bundle client (`next build` + inspection).
 - [ ] Cron : exécution manuelle → prix expirés rafraîchis, snapshot `price_history` créé.
 - [ ] PWA installable sur mobile ; Lighthouse correct ; Sentry reçoit une erreur test.
@@ -183,10 +185,10 @@ CRON_SECRET                                   # protection route cron
 
 | Risque | Mitigation |
 |---|---|
-| Approbation Whop lente | Compte créé J1 ; tout le reste ne dépend pas de Whop avant J4 |
+| Approbation Lemon Squeezy lente | Compte créé J1 ; tout le reste ne dépend pas de Lemon Squeezy avant J4 |
 | PokéTCG API lente/instable (connu) | Cache agressif `pokemon_cards` + `card_prices`, retries + timeout, fallback « Prix indisponible » |
 | Carte absente du référentiel PokéTCG (sets FR récents) | Recherche par nom + message clair ; le scan ne compte pas |
-| Webhook Whop manqué | Réconciliation membership au login |
+| Webhook Lemon Squeezy manqué | Réconciliation membership au login |
 | Cron Vercel Hobby limité (1×/jour) | Un seul job quotidien qui traite tous les caches expirés (logique 24h/48h en SQL) |
 | Nom de marque non définitif | `NEXT_PUBLIC_APP_NAME` unique, aucun hardcode du nom |
 | Coût Claude | Haiku vision (~0,003 $/scan), alerte budget 20 €, quota Free serveur-side |

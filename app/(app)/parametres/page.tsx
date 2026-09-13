@@ -29,11 +29,11 @@ export default async function ParametresPage({
   const known = {
     plan: profile?.plan ?? "free",
     planExpiresAt: profile?.plan_expires_at ?? null,
-    whopMembershipId: profile?.whop_membership_id ?? null,
+    subscriptionId: profile?.ls_subscription_id ?? null,
   };
 
-  // Filet si un webhook Whop s'est perdu : on relit l'état réel de l'abonnement.
-  // L'appel à Whop est lent ; on ne l'attend que lorsqu'il peut changer ce qui
+  // Filet si un webhook Lemon Squeezy s'est perdu : on relit l'état réel de l'abonnement.
+  // L'appel à Lemon Squeezy est lent ; on ne l'attend que lorsqu'il peut changer ce qui
   // s'affiche tout de suite (retour de paiement, échéance dépassée). Sinon il
   // part après l'envoi de la page et corrige la base pour la visite suivante.
   const expired = known.planExpiresAt !== null && new Date(known.planExpiresAt) <= new Date();
@@ -41,7 +41,7 @@ export default async function ParametresPage({
   const subscription = mustWait
     ? await reconcileSubscription(user.id, known)
     : known;
-  if (!mustWait && known.whopMembershipId) {
+  if (!mustWait && known.subscriptionId && known.plan !== "lifetime") {
     after(() => reconcileSubscription(user.id, known).catch(() => undefined));
   }
 
@@ -76,15 +76,12 @@ export default async function ParametresPage({
           />
         )}
 
-        {isPro(plan) ? (
-          <a
-            href="https://whop.com/orders"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn-secondary mt-1"
-          >
+        {plan === "pro" ? (
+          <a href="/api/portal" className="btn-secondary mt-1">
             Gérer ou annuler mon abonnement
           </a>
+        ) : plan === "lifetime" ? (
+          <p className="mt-1 text-xs text-text-muted">Accès à vie, rien à renouveler.</p>
         ) : (
           <Link
             href="/pricing"

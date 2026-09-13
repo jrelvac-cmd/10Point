@@ -1,33 +1,33 @@
 import { createAdminClient } from "./supabase/admin";
-import { fetchMembership } from "./whop";
+import { fetchSubscription } from "./lemonsqueezy";
 import type { Plan } from "./plans";
 
 export type ProfileSubscription = {
   plan: Plan;
   planExpiresAt: string | null;
-  whopMembershipId: string | null;
+  subscriptionId: string | null;
 };
 
 /**
- * Relit l'abonnement auprès de Whop si le profil en référence un.
+ * Relit l'abonnement auprès de Lemon Squeezy si le profil en référence un.
  *
  * Un webhook peut se perdre (indisponibilité, déploiement en cours). Sans ce
  * rattrapage, un utilisateur ayant payé resterait en Free, ou un abonnement
  * résilié garderait ses accès. On ne redescend jamais quelqu'un en Free sur une
- * simple erreur réseau : seule une réponse explicite de Whop fait foi.
+ * simple erreur réseau : seule une réponse explicite de Lemon Squeezy fait foi.
+ * Un Lifetime n'a rien à réconcilier.
  */
 export async function reconcileSubscription(
   userId: string,
   current: ProfileSubscription,
 ): Promise<ProfileSubscription> {
-  if (!current.whopMembershipId) return current;
+  if (!current.subscriptionId || current.plan === "lifetime") return current;
 
-  const membership = await fetchMembership(current.whopMembershipId);
-  if (!membership) return current;
+  const subscription = await fetchSubscription(current.subscriptionId);
+  if (!subscription) return current;
 
-  const nextPlan: Plan = membership.active ? membership.plan : "free";
-  const nextExpiry =
-    membership.active && membership.plan !== "lifetime" ? membership.expiresAt : null;
+  const nextPlan: Plan = subscription.active ? "pro" : "free";
+  const nextExpiry = subscription.active ? subscription.expiresAt : null;
 
   if (nextPlan === current.plan && nextExpiry === current.planExpiresAt) {
     return current;
@@ -39,9 +39,5 @@ export async function reconcileSubscription(
     .update({ plan: nextPlan, plan_expires_at: nextExpiry })
     .eq("id", userId);
 
-  return {
-    plan: nextPlan,
-    planExpiresAt: nextExpiry,
-    whopMembershipId: current.whopMembershipId,
-  };
+  return { plan: nextPlan, planExpiresAt: nextExpiry, subscriptionId: current.subscriptionId };
 }

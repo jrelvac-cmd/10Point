@@ -9,8 +9,9 @@ create table profiles (
   id uuid references auth.users on delete cascade primary key,
   username text unique not null,
   username_set boolean not null default false,
-  whop_user_id text,
-  whop_membership_id text,
+  ls_customer_id text,
+  ls_subscription_id text,
+  ls_order_id text,
   plan text not null default 'free' check (plan in ('free', 'pro', 'lifetime')),
   plan_expires_at timestamptz,
   scans_this_month integer not null default 0,
@@ -21,7 +22,8 @@ create table profiles (
   created_at timestamptz not null default now()
 );
 
-create unique index profiles_whop_membership_id_idx on profiles (whop_membership_id) where whop_membership_id is not null;
+create unique index profiles_ls_subscription_id_idx on profiles (ls_subscription_id) where ls_subscription_id is not null;
+create unique index profiles_ls_order_id_idx on profiles (ls_order_id) where ls_order_id is not null;
 
 -- ============================================================
 -- référentiel cartes (cache PokéTCG)

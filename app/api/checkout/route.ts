@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { checkoutUrlFor, PAID_PLANS, type PaidPlanKey } from "@/lib/whop";
+import { checkoutUrlFor, PAID_PLANS, type PaidPlanKey } from "@/lib/lemonsqueezy";
 import { APP_URL } from "@/lib/constants";
 
 /**
- * Redirige vers le paiement hébergé Whop. L'identifiant du compte est transmis
- * en métadonnée pour que le webhook sache quel profil créditer ; l'e-mail sert
- * de secours si le checkout ne les relaie pas.
+ * Redirige vers le paiement hébergé Lemon Squeezy. L'identifiant du compte et
+ * l'offre choisie partent en données personnalisées, que chaque webhook nous
+ * renvoie : c'est ainsi que le bon profil est crédité. L'e-mail pré-rempli sert
+ * de secours si elles manquent.
  */
 export async function GET(request: Request) {
   const supabase = await createClient();
@@ -31,9 +32,9 @@ export async function GET(request: Request) {
   }
 
   const url = new URL(base);
-  url.searchParams.set("metadata[supabase_user_id]", user.id);
-  if (user.email) url.searchParams.set("email", user.email);
-  url.searchParams.set("redirect_url", `${APP_URL}/parametres?paiement=ok`);
+  url.searchParams.set("checkout[custom][supabase_user_id]", user.id);
+  url.searchParams.set("checkout[custom][plan]", key);
+  if (user.email) url.searchParams.set("checkout[email]", user.email);
 
   return NextResponse.redirect(url.toString());
 }

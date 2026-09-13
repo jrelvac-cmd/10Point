@@ -9,12 +9,12 @@ export default function CGVPage() {
       </h1>
       <p>
         {APP_NAME} propose un abonnement Pro (mensuel, annuel) et un accès à vie (Lifetime),
-        payables via Whop. Un essai gratuit de 7 jours est proposé sur les abonnements mensuel et
+        payables via Lemon Squeezy, qui agit comme vendeur officiel (Merchant of Record) et émet la facture. Un essai gratuit de 7 jours est proposé sur les abonnements mensuel et
         annuel ; il peut être annulé à tout moment avant son terme sans frais.
       </p>
       <p className="mt-4">
         L&apos;abonnement se renouvelle automatiquement à la fin de chaque période, sauf
-        annulation depuis l&apos;espace client Whop. L&apos;offre Lifetime correspond à un
+        annulation depuis l&apos;espace client Lemon Squeezy, accessible depuis les Paramètres. L&apos;offre Lifetime correspond à un
         paiement unique donnant un accès Pro sans limite de durée.
       </p>
       <p className="mt-4">

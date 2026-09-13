@@ -15,7 +15,7 @@ export default function ConfidentialitePage() {
       </p>
       <p className="mt-4">
         Les données sont hébergées au sein de l&apos;Union européenne (Supabase, région
-        Francfort). Le paiement est traité par Whop, qui ne partage avec nous que les
+        Francfort). Le paiement est traité par Lemon Squeezy, qui ne partage avec nous que les
         informations nécessaires à l&apos;activation de ton abonnement.
       </p>
       <p className="mt-4">

@@ -334,16 +334,16 @@ try {
   await admin.from("profiles").update({ plan: "free" }).eq("id", A.id);
 
   // ---------------------------------------------------------------------
-  section("7. Paiement et webhooks (sans clés Whop)");
+  section("7. Paiement et webhooks (sans clés Lemon Squeezy)");
   const ck = await api(A, "/api/checkout?plan=lifetime");
-  const configured = Boolean(process.env.WHOP_CHECKOUT_URL_LIFETIME);
+  const configured = Boolean(process.env.LEMONSQUEEZY_CHECKOUT_URL_LIFETIME);
   check(
     configured
-      ? "checkout → redirige vers Whop avec l'identifiant du compte"
+      ? "checkout → redirige vers Lemon Squeezy avec l'identifiant du compte"
       : "checkout sans URL configurée → retour /pricing avec erreur",
     ck.status === 307 &&
       (configured
-        ? (ck.location ?? "").startsWith("https://whop.com/") &&
+        ? (ck.location ?? "").includes(".lemonsqueezy.com/") &&
           (ck.location ?? "").includes(encodeURIComponent(A.id))
         : (ck.location ?? "").includes("paiement_indisponible")),
     `→ ${(ck.location ?? "").slice(0, 90)}`,
@@ -352,7 +352,7 @@ try {
   check("plan inconnu → /pricing?error=plan_inconnu", (ckBad.location ?? "").includes("plan_inconnu"));
   const ckAnon = await api(null, "/api/checkout?plan=lifetime");
   check("checkout anonyme → /login", ckAnon.status === 307 && (ckAnon.location ?? "").includes("/login"));
-  const wh = await api(null, "/api/webhooks/whop", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: "membership.activated", data: { id: "mem_x", status: "active", user: { email: A.email } } }) });
+  const wh = await api(null, "/api/webhooks/lemonsqueezy", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ meta: { event_name: "subscription_created", custom_data: { supabase_user_id: A.id } }, data: { id: "1", attributes: { status: "active", user_email: A.email } } }) });
   const pAfterWh = await profile(A.id);
   check("webhook non signé n'accorde rien (503/401, plan inchangé)", (wh.status === 503 || wh.status === 401) && pAfterWh.plan === "free", `HTTP ${wh.status}, plan=${pAfterWh.plan}`);
   const delReq = await api(A, "/api/account/delete-request", { method: "POST" });

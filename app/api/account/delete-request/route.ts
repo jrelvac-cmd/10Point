@@ -50,7 +50,7 @@ export async function POST() {
         `Plan       : ${profile?.plan ?? "free"}`,
         `Demandé le : ${new Date().toISOString()}`,
         "",
-        "Pense à résilier son abonnement Whop avant de supprimer le compte.",
+        "Pense à résilier son abonnement Lemon Squeezy avant de supprimer le compte.",
       ].join("\n"),
     }),
   });

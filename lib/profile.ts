@@ -7,7 +7,8 @@ export type Profile = {
   username_set: boolean;
   plan: Plan;
   plan_expires_at: string | null;
-  whop_membership_id: string | null;
+  ls_subscription_id: string | null;
+  ls_order_id: string | null;
   share_collection: boolean;
   notify_price_change: boolean;
   scans_this_month: number;
@@ -26,7 +27,7 @@ export const getProfile = cache(async (userId: string): Promise<Profile | null> 
   const { data } = await supabase
     .from("profiles")
     .select(
-      "username, username_set, plan, plan_expires_at, whop_membership_id, share_collection, notify_price_change, scans_this_month",
+      "username, username_set, plan, plan_expires_at, ls_subscription_id, ls_order_id, share_collection, notify_price_change, scans_this_month",
     )
     .eq("id", userId)
     .maybeSingle();
